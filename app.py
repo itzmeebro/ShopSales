@@ -2,7 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from PIL import Image
 import io
 
@@ -13,107 +13,106 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- MODERN DARK THEME & ANIMATIONS (CSS) ---
+# --- SOFT DARK EYES-FRIENDLY THEME & ACCESSIBLE CONTRAST (CSS) ---
 st.markdown("""
     <style>
-    /* ძირითადი ფონი და ტექსტის ფერი */
+    /* რბილი, თვალისათვის კომფორტული მუქი ფონი */
     .stApp {
-        background-color: #0d0f17;
-        color: #e2e8f0;
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
     }
     
-    /* გვერდითა მენიუ (Sidebar) */
+    /* SideBar */
     [data-testid="stSidebar"] {
-        background-color: #121520 !important;
-        border-right: 1px solid #1e2436;
+        background-color: #1e293b !important;
+        border-right: 1px solid #334155;
     }
     
-    /* Card / Container სტილი */
-    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"] {
-        background: #161b26;
-        border: 1px solid #232a3b;
-        border-radius: 16px;
-        padding: 18px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-    
-    /* Hover ანიმაცია ბარათებზე */
-    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.25);
-        border-color: #7c3aed;
+    /* ტექსტის მკაფიო კონტრასტი */
+    p, span, label, h1, h2, h3, h4, h5, h6, .stMarkdown {
+        color: #f8fafc !important;
     }
 
-    /* ღილაკების სტილი და Click / Hover ანიმაცია */
+    .stCaption {
+        color: #94a3b8 !important;
+    }
+    
+    /* ბარათების / კონტეინერების რბილი სტილი */
+    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"] {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 18px;
+        transition: all 0.2s ease;
+    }
+    
+    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"]:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+
+    /* მშვიდი იისფერი/ლურჯი ღილაკები */
     .stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+        background-color: #4f46e5 !important;
         color: #ffffff !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 0.6rem 1.4rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.3px;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1.2rem !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
     }
     
     .stButton > button:hover {
-        transform: scale(1.03) translateY(-1px) !important;
-        box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.55) !important;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
-    }
-    
-    .stButton > button:active {
-        transform: scale(0.97) !important;
+        background-color: #6366f1 !important;
+        transform: translateY(-1px);
     }
 
-    /* Input ველების მოდერნიზაცია */
-    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
-        background-color: #1a202c !important;
-        color: #f7fafc !important;
-        border-radius: 10px !important;
-        border: 1px solid #2d3748 !important;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    /* Input ველები */
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"], .stTextArea textarea {
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+        border-radius: 8px !important;
+        border: 1px solid #475569 !important;
     }
 
-    .stTextInput input:focus, .stNumberInput input:focus {
-        border-color: #8b5cf6 !important;
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+        border-color: #6366f1 !important;
     }
 
     /* Tabs სტილი */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
-        background-color: transparent;
+        gap: 8px;
     }
 
     .stTabs [data-baseweb="tab"] {
-        height: 48px;
-        border-radius: 10px;
-        background-color: #161b26;
-        color: #a0aec0;
-        border: 1px solid #232a3b;
-        padding: 0 20px;
-        transition: all 0.2s ease;
+        border-radius: 8px;
+        background-color: #1e293b;
+        color: #94a3b8 !important;
+        border: 1px solid #334155;
+        padding: 8px 16px;
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+        background-color: #4f46e5 !important;
         color: #ffffff !important;
-        font-weight: bold;
+        font-weight: 600;
         border: none !important;
     }
 
-    /* Metric ბარათების სტილი */
+    /* Metric ბარათები */
     [data-testid="stMetricValue"] {
-        color: #a78bfa !important;
+        color: #818cf8 !important;
         font-weight: 700;
     }
-    
-    /* შეტყობინებების მორგება მუქ ფონზე */
+
+    [data-testid="stMetricLabel"] {
+        color: #cbd5e1 !important;
+    }
+
     .stAlert {
-        border-radius: 12px !important;
-        border: 1px solid #2d3748 !important;
+        border-radius: 8px !important;
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -155,7 +154,6 @@ def init_db():
         )
     ''')
     
-    # სვეტების შემოწმება/დამატება არსებული ბაზისთვის
     c.execute("PRAGMA table_info(orders)")
     columns = [col[1] for col in c.fetchall()]
     if 'shipping_cost' not in columns:
@@ -226,6 +224,29 @@ def update_shipping_payment(order_id, paid_status):
     conn.commit()
     conn.close()
 
+def delete_all_user_orders(username):
+    conn = sqlite3.connect('store_data.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute("DELETE FROM orders WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+
+# --- MODAL DIALOG წაშლის დადასტურებისთვის ---
+@st.dialog("🚨 შეკვეთების სრული წაშლა")
+def confirm_delete_dialog(username):
+    st.write("⚠️ **ყურადღება!** ნამდვილად გსურთ ყველა შეკვეთის წაშლა?")
+    st.write("ეს მოქმედება **სამუდამოა** და წაშლილი მონაცემების აღდგენა შეუძლებელი იქნება.")
+    
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+        if st.button("❌ გაუქმება", use_container_width=True):
+            st.rerun()
+    with col_d2:
+        if st.button("🗑️ დიახ, წაშლა", type="primary", use_container_width=True):
+            delete_all_user_orders(username)
+            st.toast("🧹 ყველა შეკვეთა წარმატებით წაიშალა!", icon="✅")
+            st.rerun()
+
 # --- Session State ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
@@ -239,7 +260,7 @@ if 'business_name' not in st.session_state:
 # ==========================================
 if not st.session_state['logged_in']:
     st.title("✨ Business & Order Hub")
-    st.caption("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები თანამედროვე პანელში.")
+    st.caption("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მოსახერხებელ პანელში.")
 
     tab1, tab2 = st.tabs(["🔑 შესვლა", "📝 რეგისტრაცია"])
 
@@ -325,20 +346,62 @@ else:
 
     # 📊 1. დეშბორდი
     if choice == "📊 დეშბორდი & ფინანსები":
-        st.subheader("📊 ფინანსური მიმოხილვა")
-        
-        if not df_all.empty:
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("სულ შეკვეთა", len(df_all))
-            c2.metric("💰 შემოსავალი", f"{df_all['sale_price'].sum():.2f} ₾")
-            c3.metric("📉 ხარჯი", f"{df_all['cost_price'].sum():.2f} ₾")
-            c4.metric("✨ წმინდა მოგება", f"{df_all['profit'].sum():.2f} ₾")
+        st.subheader("📊 ფინანსური დეშბორდი")
 
+        if not df_all.empty:
+            df_all['dt'] = pd.to_datetime(df_all['order_date'])
+            now = datetime.now()
+
+            # პერიოდის არჩევა დეშბორდის თავზე
+            col_p1, col_p2 = st.columns([2, 3])
+            with col_p1:
+                period = st.selectbox(
+                    "📅 აირჩიეთ პერიოდი ფინანსების დასათვლელად:",
+                    ["შეწმნიდან დღემდე", "ბოლო 1 კვირა", "ბოლო 1 თვე", "ბოლო 3 თვე", "ბოლო 1 წელი"]
+                )
+
+            if period == "ბოლო 1 კვირა":
+                df_filtered = df_all[df_all['dt'] >= (now - timedelta(days=7))]
+            elif period == "ბოლო 1 თვე":
+                df_filtered = df_all[df_all['dt'] >= (now - timedelta(days=30))]
+            elif period == "ბოლო 3 თვე":
+                df_filtered = df_all[df_all['dt'] >= (now - timedelta(days=90))]
+            elif period == "ბოლო 1 წელი":
+                df_filtered = df_all[df_all['dt'] >= (now - timedelta(days=365))]
+            else:
+                df_filtered = df_all
+
+            # ფინანსური მეტრიკები
+            st.markdown("<br>", unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("📦 სულ შეკვეთა", len(df_filtered))
+            c2.metric("💰 შემოსავალი", f"{df_filtered['sale_price'].sum():.2f} ₾")
+            c3.metric("📉 ხარჯი", f"{df_filtered['cost_price'].sum():.2f} ₾")
+            
+            total_profit = df_filtered['profit'].sum()
+            c4.metric("✨ წმინდა მოგება", f"{total_profit:.2f} ₾")
+
+            # შეკვეთების გადანაწილების გრაფიკი
             st.markdown("<br>", unsafe_allow_html=True)
             st.subheader("📈 შეკვეთების გადანაწილება ეტაპების მიხედვით")
-            st.bar_chart(df_all['status'].value_counts())
+            if not df_filtered.empty:
+                st.bar_chart(df_filtered['status'].value_counts())
+            else:
+                st.info("არჩეულ პერიოდში შეკვეთები არ მოიძებნა.")
+
         else:
             st.info("შეკვეთები ჯერ არ არის დაფიქსირებული.")
+
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        
+        # --- RESET / გასუფთავების სექცია ---
+        st.subheader("⚙️ მონაცემების მართვა")
+        col_reset1, col_reset2 = st.columns([3, 1])
+        with col_reset1:
+            st.caption("ყველა შეკვეთის ბაზიდან წაშლა და დეშბორდის განულება.")
+        with col_reset2:
+            if st.button("🗑️ შეკვეთების გასუფთავება", type="primary", use_container_width=True):
+                confirm_delete_dialog(st.session_state['username'])
 
     # ➕ 2. ახალი შეკვეთა
     elif choice == "➕ ახალი შეკვეთა":
