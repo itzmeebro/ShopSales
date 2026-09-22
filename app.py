@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIG & HIGH-CONTRAST NEON GLASSMORPHISM THEME
+# 1. PAGE CONFIG & DEEP DARK NEON THEME
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="Urbanwavve Manager",
@@ -13,134 +13,122 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# High contrast CSS fixes for readable crisp white text on dark violet background
 st.markdown("""
 <style>
-    /* Dark Deep Purple Core Background */
+    /* მთლიანი აპლიკაციის ფონი და ძირითადი ტექსტი */
     .stApp {
-        background: radial-gradient(circle at 20% 20%, #170B28 0%, #08040E 100%) !important;
+        background: #0B0414 !important;
         color: #FFFFFF !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* High-Contrast Crisp Text Fixes */
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
+    /* ყველა სათაურისა და ტექსტის თეთრად იძულება */
+    h1, h2, h3, h4, h5, h6, span, label, div, p {
         color: #FFFFFF !important;
     }
 
-    /* Glassmorphism Cards */
+    /* კარლასების დიზაინი (Glassmorphism) */
     .glass-card {
-        background: rgba(30, 16, 53, 0.65) !important;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        background: #150A24 !important;
         border: 1px solid rgba(168, 85, 247, 0.3) !important;
-        border-radius: 20px;
+        border-radius: 16px;
         padding: 24px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
-    /* Highlight Profit / Special Cards */
     .glass-card-glow {
-        background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(88, 28, 135, 0.2) 100%) !important;
-        backdrop-filter: blur(20px);
+        background: #1B0E30 !important;
         border: 2px solid #A855F7 !important;
-        border-radius: 20px;
+        border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 0 25px rgba(168, 85, 247, 0.3);
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
     }
 
-    /* Unified Input Fields & Labels Styling */
-    .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label, .stFileUploader label {
-        color: #E9D5FF !important;
-        font-weight: 600 !important;
-        font-size: 15px !important;
-    }
-    
-    .stTextInput input, .stSelectbox [data-baseweb="select"], .stNumberInput input, .stTextArea textarea {
-        border-radius: 14px !important;
-        background-color: rgba(15, 7, 28, 0.9) !important;
+    /* შეყვანის ველები (Inputs & Selects) */
+    .stTextInput input, .stNumberInput input, .stTextArea textarea {
+        background-color: #0F071D !important;
         color: #FFFFFF !important;
         border: 1px solid rgba(168, 85, 247, 0.5) !important;
+        border-radius: 10px !important;
         padding: 10px 14px !important;
-        font-size: 15px !important;
     }
     
     .stTextInput input:focus, .stNumberInput input:focus {
         border-color: #C084FC !important;
-        box-shadow: 0 0 15px rgba(192, 132, 252, 0.5) !important;
+        box-shadow: 0 0 10px rgba(192, 132, 252, 0.4) !important;
     }
 
-    /* Enhanced & Visible File Uploader Box Styling */
-    [data-testid="stFileUploader"] {
-        background-color: rgba(15, 7, 28, 0.9) !important;
+    /* ფოტოს ასატვირთი ველის სრული გადაფარვა და სტილიზაცია */
+    div[data-testid="stFileUploader"] {
+        background-color: #150A24 !important;
         border: 2px dashed #A855F7 !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         padding: 15px !important;
     }
-    [data-testid="stFileUploader"] section {
-        padding: 5px !important;
+    div[data-testid="stFileUploader"] section {
+        background-color: transparent !important;
     }
-    [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] div {
-        color: #FFFFFF !important;
+    div[data-testid="stFileUploader"] span, div[data-testid="stFileUploader"] small {
+        color: #E9D5FF !important;
     }
-    [data-testid="stFileUploader"] button {
-        background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
+    div[data-testid="stFileUploader"] button {
+        background: #A855F7 !important;
         color: #FFFFFF !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         border: none !important;
+        font-weight: 600 !important;
     }
 
-    /* Glowing Action Buttons */
+    /* მთავარი ღილაკების სტილი */
     .stButton>button {
-        border-radius: 14px !important;
+        width: 100%;
+        border-radius: 10px !important;
         background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        font-size: 15px !important;
         border: none !important;
-        padding: 12px 24px !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0px 4px 18px rgba(168, 85, 247, 0.4) !important;
+        padding: 10px 20px !important;
+        box-shadow: 0px 4px 15px rgba(168, 85, 247, 0.3) !important;
+        transition: all 0.2s ease;
     }
     .stButton>button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0px 6px 25px rgba(168, 85, 247, 0.7) !important;
+        opacity: 0.9;
+        transform: translateY(-1px);
     }
 
-    /* Tabs Styling */
+    /* საიდბარის ფონი */
+    section[data-testid="stSidebar"] {
+        background-color: #08030F !important;
+        border-right: 1px solid rgba(168, 85, 247, 0.2) !important;
+    }
+
+    /* ტაბების სტილი */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
+        gap: 10px;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 10px 20px;
+        background-color: #150A24;
+        border-radius: 8px;
         color: #E9D5FF !important;
+        padding: 8px 16px;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
+        background: #A855F7 !important;
         color: #FFFFFF !important;
         font-weight: bold;
-    }
-
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #0D0618 !important;
-        border-right: 1px solid rgba(168, 85, 247, 0.2) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
-# 2. SQLITE DATABASE SETUP (PERMANENT STORAGE)
+# 2. SQLITE DATABASE SETUP
 # ---------------------------------------------------------
 def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
@@ -156,7 +144,6 @@ def init_db():
             created_at TEXT
         )
     ''')
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,7 +151,6 @@ def init_db():
             created_at TEXT
         )
     ''')
-    
     conn.commit()
     conn.close()
 
@@ -175,7 +161,7 @@ def get_db_connection():
 
 
 # ---------------------------------------------------------
-# 3. SESSION STATE FOR AUTH & USER PREFERENCES
+# 3. SESSION STATE
 # ---------------------------------------------------------
 if 'registered_user' not in st.session_state:
     st.session_state.registered_user = {
@@ -213,7 +199,7 @@ def load_orders():
 # ---------------------------------------------------------
 def show_auth_page():
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; font-weight: 800; color: #FFFFFF;'>⚡ Urbanwavve Manager</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-weight: 800;'>⚡ Urbanwavve Manager</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #C084FC; font-size: 16px; margin-bottom: 35px;'>მართეთ გაყიდვები და შეკვეთები</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.2, 1])
@@ -221,10 +207,10 @@ def show_auth_page():
     with col2:
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         b1, b2 = st.columns(2)
-        if b1.button("🔑 შესვლა", use_container_width=True):
+        if b1.button("🔑 შესვლა", key="btn_login_tab"):
             st.session_state.auth_mode = 'login'
             st.rerun()
-        if b2.button("📝 რეგისტრაცია", use_container_width=True):
+        if b2.button("📝 რეგისტრაცია", key="btn_reg_tab"):
             st.session_state.auth_mode = 'register'
             st.rerun()
             
@@ -233,10 +219,9 @@ def show_auth_page():
         if st.session_state.auth_mode == 'login':
             login_id = st.text_input("ნომერი ან ელ-ფოსტა", key="login_id")
             login_pass = st.text_input("პაროლი", type="password", key="login_pass")
-            st.checkbox("დაიმახსოვრე მონაცემები", value=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("სისტემაში შესვლა", use_container_width=True):
+            if st.button("სისტემაში შესვლა", key="btn_login_submit"):
                 reg = st.session_state.registered_user
                 if (login_id == reg["email"] or login_id == reg["phone"]) and login_pass == reg["password"]:
                     st.session_state.logged_in = True
@@ -253,7 +238,7 @@ def show_auth_page():
             reg_confirm = st.text_input("გაიმეორეთ პაროლი", type="password", key="reg_confirm")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("ანგარიშის შექმნა", use_container_width=True):
+            if st.button("ანგარიშის შექმნა", key="btn_reg_submit"):
                 if reg_pass != reg_confirm:
                     st.error("❌ პაროლები არ ემთხვევა!")
                 else:
@@ -318,16 +303,16 @@ def show_create_order_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        name = st.text_input("სახელი")
-        price = st.number_input("ფასი", min_value=0.0, step=5.0)
-        cost = st.number_input("ღირებულება", min_value=0.0, step=5.0)
-        product_name = st.text_input("პროდუქტი")
+        name = st.text_input("სახელი", key="ord_name")
+        price = st.number_input("ფასი", min_value=0.0, step=5.0, key="ord_price")
+        cost = st.number_input("ღირებულება", min_value=0.0, step=5.0, key="ord_cost")
+        product_name = st.text_input("პროდუქტი", key="ord_prod")
 
     with col2:
-        shipping_fee = st.number_input("ტრანსპორტირება", min_value=0.0, step=1.0)
-        address = st.text_input("მისამართი")
-        phone = st.text_input("ნომერი")
-        photo = st.file_uploader("ფოტო", type=['png', 'jpg', 'jpeg'])
+        shipping_fee = st.number_input("ტრანსპორტირება", min_value=0.0, step=1.0, key="ord_ship")
+        address = st.text_input("მისამართი", key="ord_addr")
+        phone = st.text_input("ნომერი", key="ord_phone")
+        photo = st.file_uploader("ფოტო", type=['png', 'jpg', 'jpeg'], key="ord_photo")
 
     calculated_profit = price - cost
     
@@ -342,7 +327,7 @@ def show_create_order_page():
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 შეკვეთის ჩანიშვნა და შენახვა", use_container_width=True):
+    if st.button("💾 შეკვეთის ჩანიშვნა და შენახვა", key="btn_save_order"):
         if price > 0 and name and phone:
             conn = get_db_connection()
             c = conn.cursor()
@@ -389,7 +374,6 @@ def show_orders_page():
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Tab 1: გაფორმებული
     with tabs[0]:
         g_orders = orders_df[orders_df['status'] == 'გაფორმებული'] if not orders_df.empty else pd.DataFrame()
         if g_orders.empty:
@@ -415,7 +399,6 @@ def show_orders_page():
                     conn.commit()
                     st.rerun()
 
-    # Tab 2: ჩამოსულია
     with tabs[1]:
         c_orders = orders_df[orders_df['status'] == 'ჩამოსულია'] if not orders_df.empty else pd.DataFrame()
         if c_orders.empty:
@@ -448,7 +431,6 @@ def show_orders_page():
                     conn.commit()
                     st.rerun()
 
-    # Tab 3: ჩაბარებული
     with tabs[2]:
         f_orders = orders_df[orders_df['status'] == 'ჩაბარებული'] if not orders_df.empty else pd.DataFrame()
         if f_orders.empty:
@@ -470,7 +452,7 @@ def show_orders_page():
 
 
 # ---------------------------------------------------------
-# 8. NOTIFICATIONS & PROFILE PAGES (WITH DATA RESET)
+# 8. NOTIFICATIONS & PROFILE PAGES
 # ---------------------------------------------------------
 def show_notifications_page():
     st.markdown("<h2>🔔 ნოტიფიკაციები</h2>", unsafe_allow_html=True)
@@ -496,15 +478,15 @@ def show_profile_page():
     reg = st.session_state.registered_user
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    new_b_name = st.text_input("ბიზნესის დასახელება", value=reg["business_name"])
-    new_email = st.text_input("ელ-ფოსტა", value=reg["email"])
-    new_phone = st.text_input("საკონტაქტო ნომერი", value=reg["phone"])
+    new_b_name = st.text_input("ბიზნესის დასახელება", value=reg["business_name"], key="prof_b_name")
+    new_email = st.text_input("ელ-ფოსტა", value=reg["email"], key="prof_email")
+    new_phone = st.text_input("საკონტაქტო ნომერი", value=reg["phone"], key="prof_phone")
     
     st.markdown("<hr style='border-color: rgba(168,85,247,0.2);'>", unsafe_allow_html=True)
-    curr_pass = st.text_input("მიმდინარე პაროლი", type="password")
-    new_pass = st.text_input("ახალი პაროლი", type="password")
+    curr_pass = st.text_input("მიმდინარე პაროლი", type="password", key="prof_curr_pass")
+    new_pass = st.text_input("ახალი პაროლი", type="password", key="prof_new_pass")
 
-    if st.button("💾 ცვლილებების შენახვა"):
+    if st.button("💾 ცვლილებების შენახვა", key="btn_save_profile"):
         if curr_pass and curr_pass != reg["password"]:
             st.error("❌ მიმდინარე პაროლი არასწორია!")
         else:
@@ -517,13 +499,12 @@ def show_profile_page():
             st.success("✅ მონაცემები წარმატებით განახლდა!")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # SECURE RESET ZONE ONLY IN PROFILE
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div class="glass-card" style="border: 1px solid rgba(239, 68, 68, 0.4) !important;">', unsafe_allow_html=True)
     st.markdown("<h3 style='color: #F87171 !important;'>⚠️ საშიში ზონა (მონაცემების განულება)</h3>", unsafe_allow_html=True)
     st.markdown("<p style='color: #E9D5FF;'>ყველა შეკვეთისა და ნოტიფიკაციის სამუდამოდ წაშლა ბაზიდან.</p>", unsafe_allow_html=True)
     
-    if st.button("🗑️ ყველა შეკვეთის და მონაცემის განულება", use_container_width=True):
+    if st.button("🗑️ ყველა შეკვეთის და მონაცემის განულება", key="btn_clear_all"):
         conn = get_db_connection()
         c = conn.cursor()
         c.execute("DELETE FROM orders")
@@ -554,7 +535,7 @@ else:
         )
         
         st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("🚪 გასვლა", use_container_width=True):
+        if st.button("🚪 გასვლა", key="btn_logout"):
             st.session_state.logged_in = False
             st.rerun()
 
