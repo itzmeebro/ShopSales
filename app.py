@@ -1,3 +1,4 @@
+import streamlit as st
 import sqlite3
 import pandas as pd
 import hashlib
@@ -373,7 +374,6 @@ else:
                             is_paid = bool(row.get('shipping_paid', 0))
                             st.markdown(f"✈️ **ტრანსპორტირება:** `{ship_cost:.2f} ₾`")
                             
-                            # ჩექბოქსი გადახდის აღსანიშნავად
                             paid_check = st.checkbox("☑️ ტრანსპორტირება გადახდილია", value=is_paid, key=f"ship_check_{row['id']}")
                             if paid_check != is_paid:
                                 update_shipping_payment(row['id'], 1 if paid_check else 0)
@@ -390,7 +390,6 @@ else:
                                 st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
 
                             st.markdown("---")
-                            # გადაყვანის შეზღუდვა
                             if paid_check:
                                 if st.button("✅ გადაყვანა: ჩაბარებული", key=f"btn_move_{row['id']}", type="primary", use_container_width=True):
                                     update_order_status(row['id'], "ჩაბარებული")
