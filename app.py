@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIG & CUSTOM CSS (Modern UI with Smooth Animations)
+# 1. PAGE CONFIG & CUSTOM CSS (Active Tab Highlight & Animations)
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="Urbanwavve Manager",
@@ -42,7 +42,7 @@ st.markdown("""
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
     }
 
-    /* Base Button Styling (For Main Actions) */
+    /* Base Button Styling */
     .stButton>button {
         border-radius: 14px !important;
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
@@ -60,27 +60,30 @@ st.markdown("""
         box-shadow: 0px 6px 18px rgba(37, 99, 235, 0.4) !important;
     }
 
-    /* Custom Toggle Switch Container for Active/Inactive Buttons */
+    /* ACTIVE TAB TOGGLE STYLE (მუქი ლურჯი + მკვეთრი ქვედა ინდიკატორი) */
     .active-toggle button {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
         color: #ffffff !important;
         font-weight: 700 !important;
-        border: 1px solid #3b82f6 !important;
-        box-shadow: 0px 4px 14px rgba(37, 99, 235, 0.4) !important;
-        transform: scale(1.02) !important;
+        border-bottom: 3px solid #60a5fa !important;
+        box-shadow: 0px 6px 20px rgba(37, 99, 235, 0.5) !important;
+        transform: scale(1.03) !important;
     }
 
+    /* INACTIVE TAB TOGGLE STYLE */
     .inactive-toggle button {
         background: #121721 !important;
         color: #64748b !important;
         border: 1px solid #1e2638 !important;
         box-shadow: none !important;
         font-weight: 500 !important;
+        opacity: 0.7 !important;
     }
     .inactive-toggle button:hover {
         background: #1a2233 !important;
         color: #cbd5e1 !important;
         border-color: #2a3447 !important;
+        opacity: 1 !important;
         transform: translateY(-1px) !important;
     }
 
@@ -126,7 +129,7 @@ if 'orders' not in st.session_state:
 
 
 # ---------------------------------------------------------
-# 3. AUTHENTICATION PAGE (Balanced Toggles + Animations)
+# 3. AUTHENTICATION PAGE
 # ---------------------------------------------------------
 def show_auth_page():
     st.markdown("<br>", unsafe_allow_html=True)
@@ -136,7 +139,7 @@ def show_auth_page():
     col1, col2, col3 = st.columns([1, 1.2, 1])
     
     with col2:
-        # --- EVENLY BALANCED TOGGLE BUTTONS ---
+        # --- EVENLY BALANCED TOGGLE BUTTONS WITH ACTIVE HIGHLIGHT ---
         btn_col1, btn_col2 = st.columns(2, gap="small")
         
         with btn_col1:
