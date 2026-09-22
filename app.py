@@ -72,6 +72,20 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(192, 132, 252, 0.5) !important;
     }
 
+    /* Enhanced File Uploader Box Styling */
+    [data-testid="stFileUploader"] {
+        background-color: rgba(15, 7, 28, 0.85) !important;
+        border: 2px dashed rgba(168, 85, 247, 0.6) !important;
+        border-radius: 14px !important;
+        padding: 10px !important;
+    }
+    [data-testid="stFileUploader"] section {
+        padding: 0px !important;
+    }
+    [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] div {
+        color: #E9D5FF !important;
+    }
+
     /* Glowing Action Buttons */
     .stButton>button {
         border-radius: 14px !important;
@@ -280,7 +294,6 @@ def show_dashboard():
     with col_f:
         time_frame = st.selectbox("პერიოდი", ["ბოლო 7 დღე", "ბოლო 1 თვე", "ბოლო 3 თვე", "1 წელი"])
 
-    factor = 7 if time_frame == "ბოლო 7 დღე" else 30 if time_frame == "ბოლო 1 თვე" else 90 if time_frame == "ბოლო 3 თვე" else 365
     chart_data = pd.DataFrame({
         'დღეები': [f'დღე {i}' for i in range(1, 8)],
         'შემოსავალი (₾)': [total_revenue / 7 * i for i in range(1, 8)]
