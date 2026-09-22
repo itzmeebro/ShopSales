@@ -51,39 +51,45 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(168, 85, 247, 0.3);
     }
 
-    /* Input Fields & Labels Styling */
+    /* Unified Input Fields & Labels Styling */
     .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label, .stFileUploader label {
         color: #E9D5FF !important;
         font-weight: 600 !important;
         font-size: 15px !important;
     }
     
-    .stTextInput>div>div>input, .stSelectbox>div>div, .stNumberInput>div>div>input, .stTextArea>div>div>textarea {
+    .stTextInput input, .stSelectbox [data-baseweb="select"], .stNumberInput input, .stTextArea textarea {
         border-radius: 14px !important;
-        background-color: rgba(15, 7, 28, 0.85) !important;
+        background-color: rgba(15, 7, 28, 0.9) !important;
         color: #FFFFFF !important;
-        border: 1px solid rgba(168, 85, 247, 0.4) !important;
-        padding: 12px 16px !important;
+        border: 1px solid rgba(168, 85, 247, 0.5) !important;
+        padding: 10px 14px !important;
         font-size: 15px !important;
     }
     
-    .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
+    .stTextInput input:focus, .stNumberInput input:focus {
         border-color: #C084FC !important;
         box-shadow: 0 0 15px rgba(192, 132, 252, 0.5) !important;
     }
 
-    /* Enhanced File Uploader Box Styling */
+    /* Enhanced & Visible File Uploader Box Styling */
     [data-testid="stFileUploader"] {
-        background-color: rgba(15, 7, 28, 0.85) !important;
-        border: 2px dashed rgba(168, 85, 247, 0.6) !important;
+        background-color: rgba(15, 7, 28, 0.9) !important;
+        border: 2px dashed #A855F7 !important;
         border-radius: 14px !important;
-        padding: 10px !important;
+        padding: 15px !important;
     }
     [data-testid="stFileUploader"] section {
-        padding: 0px !important;
+        padding: 5px !important;
     }
     [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] div {
-        color: #E9D5FF !important;
+        color: #FFFFFF !important;
+    }
+    [data-testid="stFileUploader"] button {
+        background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
+        color: #FFFFFF !important;
+        border-radius: 10px !important;
+        border: none !important;
     }
 
     /* Glowing Action Buttons */
@@ -135,7 +141,6 @@ def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
     
-    # Orders Table
     c.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
@@ -152,7 +157,6 @@ def init_db():
         )
     ''')
     
-    # Notifications Table
     c.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -189,7 +193,6 @@ if 'auth_mode' not in st.session_state:
     st.session_state.auth_mode = 'login'
 
 
-# Helper Functions for DB Operations
 def add_notification(text):
     conn = get_db_connection()
     c = conn.cursor()
@@ -304,7 +307,7 @@ def show_dashboard():
 
 
 # ---------------------------------------------------------
-# 6. CREATE ORDER PAGE (SHORT LABELS & REAL-TIME PROFIT)
+# 6. CREATE ORDER PAGE
 # ---------------------------------------------------------
 def show_create_order_page():
     st.markdown("<h2>📝 შეკვეთის გაფორმება</h2>", unsafe_allow_html=True)
@@ -326,7 +329,6 @@ def show_create_order_page():
         phone = st.text_input("ნომერი")
         photo = st.file_uploader("ფოტო", type=['png', 'jpg', 'jpeg'])
 
-    # REAL-TIME PROFIT CALCULATION DISPLAY
     calculated_profit = price - cost
     
     st.markdown("<br>", unsafe_allow_html=True)
@@ -364,7 +366,7 @@ def show_create_order_page():
 
 
 # ---------------------------------------------------------
-# 7. ORDERS MANAGEMENT PAGE (3 STAGES + PERMANENT DELETE)
+# 7. ORDERS MANAGEMENT PAGE
 # ---------------------------------------------------------
 def show_orders_page():
     st.markdown("<h2>📦 შეკვეთების მართვა</h2>", unsafe_allow_html=True)
@@ -468,7 +470,7 @@ def show_orders_page():
 
 
 # ---------------------------------------------------------
-# 8. NOTIFICATIONS & PROFILE PAGES
+# 8. NOTIFICATIONS & PROFILE PAGES (WITH DATA RESET)
 # ---------------------------------------------------------
 def show_notifications_page():
     st.markdown("<h2>🔔 ნოტიფიკაციები</h2>", unsafe_allow_html=True)
@@ -513,6 +515,24 @@ def show_profile_page():
                 reg["password"] = new_pass
             add_notification("👤 პროფილის მონაცემები განახლდა")
             st.success("✅ მონაცემები წარმატებით განახლდა!")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # SECURE RESET ZONE ONLY IN PROFILE
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="glass-card" style="border: 1px solid rgba(239, 68, 68, 0.4) !important;">', unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #F87171 !important;'>⚠️ საშიში ზონა (მონაცემების განულება)</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #E9D5FF;'>ყველა შეკვეთისა და ნოტიფიკაციის სამუდამოდ წაშლა ბაზიდან.</p>", unsafe_allow_html=True)
+    
+    if st.button("🗑️ ყველა შეკვეთის და მონაცემის განულება", use_container_width=True):
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("DELETE FROM orders")
+        c.execute("DELETE FROM notifications")
+        conn.commit()
+        conn.close()
+        add_notification("⚠️ სისტემის ყველა მონაცემი განულდა")
+        st.success("✅ ბაზა წარმატებით განულდა!")
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 
