@@ -291,7 +291,7 @@ def show_dashboard():
 
 
 # ---------------------------------------------------------
-# 6. CREATE ORDER PAGE (REAL-TIME PROFIT & DB PERSISTENCE)
+# 6. CREATE ORDER PAGE (SHORT LABELS & REAL-TIME PROFIT)
 # ---------------------------------------------------------
 def show_create_order_page():
     st.markdown("<h2>📝 შეკვეთის გაფორმება</h2>", unsafe_allow_html=True)
@@ -299,20 +299,19 @@ def show_create_order_page():
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     
-    # 2 Columns for Form Fields
     col1, col2 = st.columns(2)
     
     with col1:
-        name = st.text_input("სახელი (ინსტაგრამ იუზერი / შემკვეთი)")
-        price = st.number_input("ფასი (რაც მომხმარებელმა გადაიხადა ₾)", min_value=0.0, step=5.0)
-        cost = st.number_input("ღირებულება (რაც პროდუქტი გვიჯდება ₾)", min_value=0.0, step=5.0)
-        address = st.text_input("მისამართი")
+        name = st.text_input("სახელი")
+        price = st.number_input("ფასი", min_value=0.0, step=5.0)
+        cost = st.number_input("ღირებულება", min_value=0.0, step=5.0)
+        product_name = st.text_input("პროდუქტი")
 
     with col2:
+        shipping_fee = st.number_input("ტრანსპორტირება", min_value=0.0, step=1.0)
+        address = st.text_input("მისამართი")
         phone = st.text_input("ნომერი")
-        shipping_fee = st.number_input("ტრანსპორტირების თანხა (₾)", min_value=0.0, step=1.0)
-        product_name = st.text_input("პროდუქტის დასახელება")
-        photo = st.file_uploader("ფოტო (სურვილისამებრ)", type=['png', 'jpg', 'jpeg'])
+        photo = st.file_uploader("ფოტო", type=['png', 'jpg', 'jpeg'])
 
     # REAL-TIME PROFIT CALCULATION DISPLAY
     calculated_profit = price - cost
@@ -344,7 +343,7 @@ def show_create_order_page():
             conn.close()
             
             add_notification(f"📦 ახალი შეკვეთა #{order_id} გაფორმდა ({name})")
-            st.success(f"✅ შეკვეთა #{order_id} წარმატებით შენახულია ბაზაში სამუდამოდ!")
+            st.success(f"✅ შეკვეთა #{order_id} წარმატებით შენახულია ბაზაში!")
         else:
             st.error("❌ გთხოვთ შეავსოთ აუცილებელი ველები: სახელი, ფასი და ნომერი!")
 
