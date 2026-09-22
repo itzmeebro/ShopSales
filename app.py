@@ -1,4 +1,3 @@
-import streamlit as st
 import sqlite3
 import pandas as pd
 import hashlib
@@ -42,9 +41,20 @@ def init_db():
             customer_name TEXT,
             order_date TEXT,
             status TEXT,
-            image BLOB
+            image BLOB,
+            shipping_cost REAL DEFAULT 0,
+            shipping_paid INTEGER DEFAULT 0
         )
     ''')
+    
+    # სვეტების შემოწმება/დამატება ძველი ბაზისთვის
+    c.execute("PRAGMA table_info(orders)")
+    columns = [col[1] for col in c.fetchall()]
+    if 'shipping_cost' not in columns:
+        c.execute("ALTER TABLE orders ADD COLUMN shipping_cost REAL DEFAULT 0")
+    if 'shipping_paid' not in columns:
+        c.execute("ALTER TABLE orders ADD COLUMN shipping_paid INTEGER DEFAULT 0")
+        
     conn.commit()
     conn.close()
 
@@ -74,13 +84,13 @@ def login_user(username_or_email, password):
     conn.close()
     return data
 
-def add_order(username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes):
+def add_order(username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes, shipping_cost):
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
     c.execute('''
-        INSERT INTO orders (username, item_name, cost_price, sale_price, profit, customer_name, order_date, status, image)
-        VALUES (?,?,?,?,?,?,?,'გაფორმებული',?)
-    ''', (username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes))
+        INSERT INTO orders (username, item_name, cost_price, sale_price, profit, customer_name, order_date, status, image, shipping_cost, shipping_paid)
+        VALUES (?,?,?,?,?,?,?,'გაფორმებული',?,?, 0)
+    ''', (username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes, shipping_cost))
     conn.commit()
     conn.close()
 
@@ -94,6 +104,13 @@ def update_order_status(order_id, new_status):
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
     c.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
+    conn.commit()
+    conn.close()
+
+def update_shipping_payment(order_id, paid_status):
+    conn = sqlite3.connect('store_data.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute("UPDATE orders SET shipping_paid = ? WHERE id = ?", (paid_status, order_id))
     conn.commit()
     conn.close()
 
@@ -224,6 +241,7 @@ else:
         with col2:
             sale_price = st.number_input("💰 გასაყიდი ფასი (₾)", min_value=0.0, step=1.0, value=0.0)
             cost_price = st.number_input("📉 თვითღირებულება (₾)", min_value=0.0, step=1.0, value=0.0)
+            shipping_cost = st.number_input("✈️ წონა / ტრანსპორტირება (₾)", min_value=0.0, step=0.5, value=0.0)
             
             profit = sale_price - cost_price
             
@@ -255,7 +273,8 @@ else:
                     profit,
                     customer_name,
                     current_now,
-                    image_bytes
+                    image_bytes,
+                    shipping_cost
                 )
                 st.success(f"🎉 შეკვეთა წარმატებით ჩაინიშნა! თარიღი: {current_now}")
 
@@ -288,58 +307,133 @@ else:
             f"✅ 3. ჩაბარებული ({count_chab})"
         ])
 
-        def render_pretty_orders(df_subset, status_badge_color, btn_label=None, next_status=None):
-            if df_subset.empty:
-                st.info("💡 ამ სექციაში შეკვეთები არ არის.")
-                return
-
-            for _, row in df_subset.iterrows():
-                with st.container():
-                    st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
-                    col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
-
-                    with col_img:
-                        if row['image']:
-                            image = Image.open(io.BytesIO(row['image']))
-                            st.image(image, use_container_width=True)
-                        else:
-                            st.info("🖼️ ფოტო არ არის")
-
-                    with col_info:
-                        st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
-                        st.markdown(f"📅 **თარიღი:** {row['order_date']}")
-                        st.markdown(f"🏷️ **სტატუსი:** :{status_badge_color}[{row['status']}]")
-                        
-                    with col_action:
-                        st.markdown("##### 💵 ფინანსები")
-                        st.write(f"💰 გასაყიდი: **{row['sale_price']:.2f} ₾**")
-                        st.write(f"📉 თვითღირ.: **{row['cost_price']:.2f} ₾**")
-                        profit_val = row['profit']
-                        if profit_val >= 0:
-                            st.markdown(f"✨ მოგება: :green[**+{profit_val:.2f} ₾**]")
-                        else:
-                            st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
-
-                        st.markdown("---")
-                        if btn_label and next_status:
-                            if st.button(btn_label, key=f"btn_move_{row['id']}", type="primary", use_container_width=True):
-                                update_order_status(row['id'], next_status)
-                                st.success(f"შეკვეთა #{row['id']} გადავიდა სტატუსზე: {next_status}")
-                                st.rerun()
-
-                st.markdown("---")
-
         with tab1:
             st.subheader("📝 გაფორმებული შეკვეთები")
-            render_pretty_orders(df_gaph, "orange", "✈️ გადაყვანა: ჩამოსული", "ჩამოსული")
+            if df_gaph.empty:
+                st.info("💡 ამ სექციაში შეკვეთები არ არის.")
+            else:
+                for _, row in df_gaph.iterrows():
+                    with st.container():
+                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
+
+                        with col_img:
+                            if row['image']:
+                                image = Image.open(io.BytesIO(row['image']))
+                                st.image(image, use_container_width=True)
+                            else:
+                                st.info("🖼️ ფოტო არ არის")
+
+                        with col_info:
+                            st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📅 **თარიღი:** {row['order_date']}")
+                            st.markdown(f"🏷️ **სტატუსი:** :orange[{row['status']}]")
+                            st.markdown(f"✈️ **ტრანსპორტირება:** `{row.get('shipping_cost', 0):.2f} ₾`")
+                            
+                        with col_action:
+                            st.markdown("##### 💵 ფინანსები")
+                            st.write(f"💰 გასაყიდი: **{row['sale_price']:.2f} ₾**")
+                            st.write(f"📉 თვითღირ.: **{row['cost_price']:.2f} ₾**")
+                            profit_val = row['profit']
+                            if profit_val >= 0:
+                                st.markdown(f"✨ მოგება: :green[**+{profit_val:.2f} ₾**]")
+                            else:
+                                st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
+
+                            st.markdown("---")
+                            if st.button("✈️ გადაყვანა: ჩამოსული", key=f"btn_move_{row['id']}", type="primary", use_container_width=True):
+                                update_order_status(row['id'], "ჩამოსული")
+                                st.rerun()
+
+                    st.markdown("---")
 
         with tab2:
             st.subheader("✈️ ჩამოსული შეკვეთები")
-            render_pretty_orders(df_chamo, "blue", "✅ გადაყვანა: ჩაბარებული", "ჩაბარებული")
+            if df_chamo.empty:
+                st.info("💡 ამ სექციაში შეკვეთები არ არის.")
+            else:
+                for _, row in df_chamo.iterrows():
+                    with st.container():
+                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
+
+                        with col_img:
+                            if row['image']:
+                                image = Image.open(io.BytesIO(row['image']))
+                                st.image(image, use_container_width=True)
+                            else:
+                                st.info("🖼️ ფოტო არ არის")
+
+                        with col_info:
+                            st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📅 **თარიღი:** {row['order_date']}")
+                            st.markdown(f"🏷️ **სტატუსი:** :blue[{row['status']}]")
+                            
+                            ship_cost = row.get('shipping_cost', 0)
+                            is_paid = bool(row.get('shipping_paid', 0))
+                            st.markdown(f"✈️ **ტრანსპორტირება:** `{ship_cost:.2f} ₾`")
+                            
+                            # ჩექბოქსი გადახდის აღსანიშნავად
+                            paid_check = st.checkbox("☑️ ტრანსპორტირება გადახდილია", value=is_paid, key=f"ship_check_{row['id']}")
+                            if paid_check != is_paid:
+                                update_shipping_payment(row['id'], 1 if paid_check else 0)
+                                st.rerun()
+
+                        with col_action:
+                            st.markdown("##### 💵 ფინანსები")
+                            st.write(f"💰 გასაყიდი: **{row['sale_price']:.2f} ₾**")
+                            st.write(f"📉 თვითღირ.: **{row['cost_price']:.2f} ₾**")
+                            profit_val = row['profit']
+                            if profit_val >= 0:
+                                st.markdown(f"✨ მოგება: :green[**+{profit_val:.2f} ₾**]")
+                            else:
+                                st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
+
+                            st.markdown("---")
+                            # გადაყვანის შეზღუდვა
+                            if paid_check:
+                                if st.button("✅ გადაყვანა: ჩაბარებული", key=f"btn_move_{row['id']}", type="primary", use_container_width=True):
+                                    update_order_status(row['id'], "ჩაბარებული")
+                                    st.rerun()
+                            else:
+                                st.warning("🔒 გადასაყვანად ჯერ მონიშნეთ ტრანსპორტირების გადახდა")
+
+                    st.markdown("---")
 
         with tab3:
             st.subheader("✅ ჩაბარებული შეკვეთები")
-            render_pretty_orders(df_chab, "green")
+            if df_chab.empty:
+                st.info("💡 ამ სექციაში შეკვეთები არ არის.")
+            else:
+                for _, row in df_chab.iterrows():
+                    with st.container():
+                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
+
+                        with col_img:
+                            if row['image']:
+                                image = Image.open(io.BytesIO(row['image']))
+                                st.image(image, use_container_width=True)
+                            else:
+                                st.info("🖼️ ფოტო არ არის")
+
+                        with col_info:
+                            st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📅 **თარიღი:** {row['order_date']}")
+                            st.markdown(f"🏷️ **სტატუსი:** :green[{row['status']}]")
+                            st.markdown(f"✈️ **ტრანსპორტირება:** `{row.get('shipping_cost', 0):.2f} ₾` (✅ გადახდილია)")
+
+                        with col_action:
+                            st.markdown("##### 💵 ფინანსები")
+                            st.write(f"💰 გასაყიდი: **{row['sale_price']:.2f} ₾**")
+                            st.write(f"📉 თვითღირ.: **{row['cost_price']:.2f} ₾**")
+                            profit_val = row['profit']
+                            if profit_val >= 0:
+                                st.markdown(f"✨ მოგება: :green[**+{profit_val:.2f} ₾**]")
+                            else:
+                                st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
+
+                    st.markdown("---")
 
     # 🔔 4. ნოტიფიკაციები
     elif choice.startswith("🔔 ნოტიფიკაციები"):
