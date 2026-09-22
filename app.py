@@ -1,122 +1,163 @@
 import streamlit as st
 import pandas as pd
+import sqlite3
 from datetime import datetime, timedelta
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIG & DARK PURPLE NEON GLASSMORPHISM THEME
+# 1. PAGE CONFIG & HIGH-CONTRAST NEON GLASSMORPHISM THEME
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Urbanwavve E-Commerce",
+    page_title="Urbanwavve Manager",
     page_icon="🔮",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# High contrast CSS fixes for readable crisp white text on dark violet background
 st.markdown("""
 <style>
     /* Dark Deep Purple Core Background */
     .stApp {
-        background: radial-gradient(circle at 20% 20%, #1e1035 0%, #0d0814 100%) !important;
-        color: #e2e8f0;
+        background: radial-gradient(circle at 20% 20%, #170B28 0%, #08040E 100%) !important;
+        color: #FFFFFF !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* High-Contrast Crisp Text Fixes */
+    h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #FFFFFF !important;
     }
 
     /* Glassmorphism Cards */
     .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(30, 16, 53, 0.65) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(168, 85, 247, 0.3) !important;
         border-radius: 20px;
-        padding: 20px;
+        padding: 24px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* Glass Highlight Card (Glow Effect) */
+    /* Highlight Profit / Special Cards */
     .glass-card-glow {
-        background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(126, 34, 206, 0.05) 100%);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(168, 85, 247, 0.3);
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(88, 28, 135, 0.2) 100%) !important;
+        backdrop-filter: blur(20px);
+        border: 2px solid #A855F7 !important;
         border-radius: 20px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 0 25px rgba(168, 85, 247, 0.15);
+        box-shadow: 0 0 25px rgba(168, 85, 247, 0.3);
     }
 
-    /* Input Fields Styling */
-    .stTextInput>div>div>input, .stSelectbox>div>div, .stNumberInput>div>div>input {
+    /* Input Fields & Labels Styling */
+    .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label, .stFileUploader label {
+        color: #E9D5FF !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+    }
+    
+    .stTextInput>div>div>input, .stSelectbox>div>div, .stNumberInput>div>div>input, .stTextArea>div>div>textarea {
         border-radius: 14px !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        padding: 10px 14px !important;
+        background-color: rgba(15, 7, 28, 0.85) !important;
+        color: #FFFFFF !important;
+        border: 1px solid rgba(168, 85, 247, 0.4) !important;
+        padding: 12px 16px !important;
+        font-size: 15px !important;
     }
-    .stTextInput>div>div>input:focus {
-        border-color: #a855f7 !important;
-        box-shadow: 0 0 12px rgba(168, 85, 247, 0.4) !important;
+    
+    .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
+        border-color: #C084FC !important;
+        box-shadow: 0 0 15px rgba(192, 132, 252, 0.5) !important;
     }
 
-    /* Base Glowing Buttons */
+    /* Glowing Action Buttons */
     .stButton>button {
         border-radius: 14px !important;
-        background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%) !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
+        background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
         border: none !important;
-        padding: 10px 22px !important;
+        padding: 12px 24px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0px 4px 15px rgba(168, 85, 247, 0.3) !important;
+        box-shadow: 0px 4px 18px rgba(168, 85, 247, 0.4) !important;
     }
     .stButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0px 6px 20px rgba(168, 85, 247, 0.5) !important;
+        box-shadow: 0px 6px 25px rgba(168, 85, 247, 0.7) !important;
     }
 
-    /* Auth Active/Inactive Toggles */
-    .active-toggle button {
-        background: linear-gradient(135deg, #7e22ce 0%, #3b0764 100%) !important;
-        color: #c084fc !important;
-        font-weight: 700 !important;
-        border: 1px solid #a855f7 !important;
-        box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.5), 0px 0px 18px rgba(168, 85, 247, 0.5) !important;
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
     }
-    .inactive-toggle button {
-        background: rgba(255, 255, 255, 0.04) !important;
-        color: #94a3b8 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: none !important;
-        opacity: 0.7 !important;
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 10px 20px;
+        color: #E9D5FF !important;
     }
-
-    /* Form Slide-in Animation */
-    @keyframes fadeInSlide {
-        0% { opacity: 0; transform: translateY(15px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-    .animated-form {
-        animation: fadeInSlide 0.4s ease-out forwards;
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: bold;
     }
 
     /* Sidebar Styling */
     section[data-testid="stSidebar"] {
-        background-color: rgba(13, 8, 20, 0.85) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-    }
-
-    /* Metric Cards */
-    div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        padding: 16px !important;
-        border-radius: 16px !important;
+        background-color: #0D0618 !important;
+        border-right: 1px solid rgba(168, 85, 247, 0.2) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
-# 2. SESSION STATE & PERSISTENT DATA
+# 2. SQLITE DATABASE SETUP (PERMANENT STORAGE)
+# ---------------------------------------------------------
+def init_db():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    
+    # Orders Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY,
+            customer_name TEXT,
+            price REAL,
+            cost REAL,
+            address TEXT,
+            phone TEXT,
+            shipping_fee REAL,
+            product_name TEXT,
+            status TEXT,
+            shipping_paid INTEGER,
+            created_at TEXT
+        )
+    ''')
+    
+    # Notifications Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT,
+            created_at TEXT
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def get_db_connection():
+    return sqlite3.connect("database.db")
+
+
+# ---------------------------------------------------------
+# 3. SESSION STATE FOR AUTH & USER PREFERENCES
 # ---------------------------------------------------------
 if 'registered_user' not in st.session_state:
     st.session_state.registered_user = {
@@ -124,165 +165,114 @@ if 'registered_user' not in st.session_state:
         "phone": "599000000",
         "business_name": "Urbanwavve",
         "business_type": "ონლაინ მაღაზია",
-        "password": "password123",
-        "logo": None
+        "password": "password123"
     }
 
-if 'remember_me' not in st.session_state:
-    st.session_state.remember_me = True  # ტაბის გათიშვისას ავტომატური შესვლა
-
 if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = st.session_state.remember_me
+    st.session_state.logged_in = True
 
 if 'auth_mode' not in st.session_state:
     st.session_state.auth_mode = 'login'
 
-if 'notifications' not in st.session_state:
-    st.session_state.notifications = [
-        {"text": "🔔 სისტემაში წარმატებით შეხვედით", "date": datetime.now().strftime("%Y-%m-%d %H:%M")}
-    ]
 
-if 'orders' not in st.session_state:
-    # 10+ დღის წინანდელი შეკვეთა ავტო-შეხსენების შესამოწმებლად
-    past_date = (datetime.now() - timedelta(days=11)).strftime("%Y-%m-%d")
-    st.session_state.orders = [
-        {
-            "id": "ORD-101",
-            "sell_price": 120.0,
-            "cost_price": 60.0,
-            "customer_name": "giorgi_meshveliani",
-            "phone": "595112233",
-            "address": "თბილისი, ჭავჭავაძის #12",
-            "shipping_fee": 10.0,
-            "shipping_paid": False,
-            "product_info": "Oversized Blue Hoodie",
-            "product_photo": None,
-            "status": "გაფორმებული",
-            "created_at": past_date
-        }
-    ]
+# Helper Functions for DB Operations
+def add_notification(text):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("INSERT INTO notifications (text, created_at) VALUES (?, ?)", 
+              (text, datetime.now().strftime("%Y-%m-%d %H:%M")))
+    conn.commit()
+    conn.close()
 
-# ავტომატური შეხსენების შემოწმება (10 დღეზე მეტი ხნის შეკვეთები)
-def check_10_day_reminders():
-    for o in st.session_state.orders:
-        created = datetime.strptime(o["created_at"], "%Y-%m-%d")
-        if (datetime.now() - created).days >= 10 and o["status"] != "ჩაბარებული":
-            reminder_text = f"⏰ შეხსენება: შეკვეთა #{o['id']} ({o['customer_name']}) 10 დღეზე მეტია გაფორმებულია. გთხოვთ შეამოწმოთ სტატუსი!"
-            if not any(n["text"] == reminder_text for n in st.session_state.notifications):
-                st.session_state.notifications.append({"text": reminder_text, "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
-
-check_10_day_reminders()
+def load_orders():
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT * FROM orders ORDER BY rowid DESC", conn)
+    conn.close()
+    return df
 
 
 # ---------------------------------------------------------
-# 3. AUTHENTICATION PAGE (LOGIN / REGISTER)
+# 4. AUTHENTICATION PAGE
 # ---------------------------------------------------------
 def show_auth_page():
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; font-weight: 800; color: #ffffff;'>⚡ Urbanwavve Manager</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #c084fc; font-size: 15px; margin-bottom: 35px;'>მართეთ გაყიდვები და შეკვეთები ექსკლუზიურ გარემოში</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-weight: 800; color: #FFFFFF;'>⚡ Urbanwavve Manager</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #C084FC; font-size: 16px; margin-bottom: 35px;'>მართეთ გაყიდვები და შეკვეთები</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.2, 1])
     
     with col2:
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        btn_col1, btn_col2 = st.columns(2, gap="small")
-        
-        with btn_col1:
-            if st.session_state.auth_mode == 'login':
-                st.markdown('<div class="active-toggle">', unsafe_allow_html=True)
-                st.button("🔑 შესვლა", key="nav_login_act", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="inactive-toggle">', unsafe_allow_html=True)
-                if st.button("🔑 შესვლა", key="nav_login_inact", use_container_width=True):
-                    st.session_state.auth_mode = 'login'
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-        with btn_col2:
-            if st.session_state.auth_mode == 'register':
-                st.markdown('<div class="active-toggle">', unsafe_allow_html=True)
-                st.button("📝 რეგისტრაცია", key="nav_reg_act", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="inactive-toggle">', unsafe_allow_html=True)
-                if st.button("📝 რეგისტრაცია", key="nav_reg_inact", use_container_width=True):
-                    st.session_state.auth_mode = 'register'
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-        
+        b1, b2 = st.columns(2)
+        if b1.button("🔑 შესვლა", use_container_width=True):
+            st.session_state.auth_mode = 'login'
+            st.rerun()
+        if b2.button("📝 რეგისტრაცია", use_container_width=True):
+            st.session_state.auth_mode = 'register'
+            st.rerun()
+            
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="animated-form">', unsafe_allow_html=True)
         
         if st.session_state.auth_mode == 'login':
             login_id = st.text_input("ნომერი ან ელ-ფოსტა", key="login_id")
             login_pass = st.text_input("პაროლი", type="password", key="login_pass")
-            remember = st.checkbox("დაიმახსოვრე მონაცემები", value=True)
+            st.checkbox("დაიმახსოვრე მონაცემები", value=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("სისტემაში შესვლა", key="submit_login", use_container_width=True):
+            if st.button("სისტემაში შესვლა", use_container_width=True):
                 reg = st.session_state.registered_user
                 if (login_id == reg["email"] or login_id == reg["phone"]) and login_pass == reg["password"]:
                     st.session_state.logged_in = True
-                    st.session_state.remember_me = remember
-                    st.session_state.notifications.append({"text": "🔑 სისტემაში წარმატებით შეხვედით", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
+                    add_notification("🔑 სისტემაში წარმატებით შეხვედით")
                     st.rerun()
                 else:
                     st.error("❌ არასწორი ნომერი/ელ-ფოსტა ან პაროლი!")
-
         else:
             reg_email = st.text_input("ელ-ფოსტა", key="reg_email")
             reg_phone = st.text_input("საკონტაქტო ნომერი", key="reg_phone")
             reg_b_name = st.text_input("ბიზნესის დასახელება", key="reg_b_name")
-            reg_b_type = st.selectbox("ბიზნესის სახეობა", ["ონლაინ მაღაზია", "ოჯახის მაღაზია", "შიდა გაყიდვები", "საბითუმო ვაჭრობა", "ინდივიდუალური წარმოება"])
-            
+            reg_b_type = st.selectbox("ბიზნესის სახეობა", ["ონლაინ მაღაზია", "ოჯახის მაღაზია", "შიდა გაყიდვები", "საბითუმო ვაჭრობა"])
             reg_pass = st.text_input("პაროლი", type="password", key="reg_pass")
             reg_confirm = st.text_input("გაიმეორეთ პაროლი", type="password", key="reg_confirm")
-            reg_logo = st.file_uploader("ლოგოს ატვირთვა", type=['png', 'jpg', 'jpeg'])
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("ანგარიშის შექმნა", key="submit_reg", use_container_width=True):
-                if not (reg_email and reg_phone and reg_b_name and reg_pass and reg_confirm):
-                    st.error("❌ გთხოვთ შეავსოთ ყველა ველი!")
-                elif reg_pass != reg_confirm:
-                    st.error("❌ პაროლები ერთმანეთს არ ემთხვევა!")
+            if st.button("ანგარიშის შექმნა", use_container_width=True):
+                if reg_pass != reg_confirm:
+                    st.error("❌ პაროლები არ ემთხვევა!")
                 else:
                     st.session_state.registered_user = {
-                        "email": reg_email,
-                        "phone": reg_phone,
-                        "business_name": reg_b_name,
-                        "business_type": reg_b_type,
-                        "password": reg_pass,
-                        "logo": reg_logo
+                        "email": reg_email, "phone": reg_phone,
+                        "business_name": reg_b_name, "business_type": reg_b_type,
+                        "password": reg_pass
                     }
-                    st.session_state.notifications.append({"text": "🎉 ახალი ანგარიში წარმატებით დარეგისტრირდა!", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
-                    st.success("✅ რეგისტრაცია წარმატებით დასრულდა! გადადით შესვლის გვერდზე.")
-                    
-        st.markdown('</div>', unsafe_allow_html=True)
+                    add_notification("🎉 ახალი ანგარიში დარეგისტრირდა")
+                    st.success("✅ წარმატებით დარეგისტრირდით!")
         st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
-# 4. MAIN DASHBOARD PAGE
+# 5. DASHBOARD PAGE
 # ---------------------------------------------------------
 def show_dashboard():
     st.markdown("<h2>📊 ფინანსური დეშბორდი</h2>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Calculate Finance
-    total_revenue = sum(o["sell_price"] for o in st.session_state.orders if o["status"] != "გაუქმებული")
-    total_cost = sum(o["cost_price"] for o in st.session_state.orders if o["status"] != "გაუქმებული")
-    total_profit = total_revenue - total_cost
+    orders_df = load_orders()
+    
+    if not orders_df.empty:
+        total_revenue = orders_df[orders_df['status'] != 'გაუქმებული']['price'].sum()
+        total_cost = orders_df[orders_df['status'] != 'გაუქმებული']['cost'].sum()
+        total_profit = total_revenue - total_cost
+    else:
+        total_revenue, total_cost, total_profit = 0.0, 0.0, 0.0
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("შემოსავალი (Total Revenue)", f"{total_revenue:,.2f} ₾")
-    c2.metric("გასავალი (Total Cost)", f"{total_cost:,.2f} ₾")
-    c3.metric("წმინდა მოგება (Net Profit)", f"{total_profit:,.2f} ₾")
+    c1.metric("შემოსავალი", f"{total_revenue:,.2f} ₾")
+    c2.metric("გასავალი", f"{total_cost:,.2f} ₾")
+    c3.metric("წმინდა მოგება", f"{total_profit:,.2f} ₾")
 
-    st.markdown("<br><hr style='border-color: rgba(255,255,255,0.1);'><br>", unsafe_allow_html=True)
+    st.markdown("<br><hr style='border-color: rgba(168,85,247,0.2);'><br>", unsafe_allow_html=True)
 
-    # Compact Graph Filter
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     col_t, col_f = st.columns([3, 1])
     with col_t:
@@ -290,191 +280,227 @@ def show_dashboard():
     with col_f:
         time_frame = st.selectbox("პერიოდი", ["ბოლო 7 დღე", "ბოლო 1 თვე", "ბოლო 3 თვე", "1 წელი"])
 
-    # Sample chart scaled by selection
-    factor = 1 if time_frame == "ბოლო 7 დღე" else 3 if time_frame == "ბოლო 1 თვე" else 6 if time_frame == "ბოლო 3 თვე" else 12
+    factor = 7 if time_frame == "ბოლო 7 დღე" else 30 if time_frame == "ბოლო 1 თვე" else 90 if time_frame == "ბოლო 3 თვე" else 365
     chart_data = pd.DataFrame({
-        'პერიოდი': [f'T-{i}' for i in range(factor, 0, -1)],
-        'შემოსავალი (₾)': [100 * i + (total_revenue/max(factor,1)) for i in range(1, factor + 1)]
-    }).set_index('პერიოდი')
+        'დღეები': [f'დღე {i}' for i in range(1, 8)],
+        'შემოსავალი (₾)': [total_revenue / 7 * i for i in range(1, 8)]
+    }).set_index('დღეები')
 
-    st.line_chart(chart_data, color="#a855f7", height=220)
+    st.line_chart(chart_data, color="#A855F7", height=220)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
-# 5. ORDER CREATION PAGE
+# 6. CREATE ORDER PAGE (REAL-TIME PROFIT & DB PERSISTENCE)
 # ---------------------------------------------------------
 def show_create_order_page():
-    st.title("📝 შეკვეთის გაფორმება")
+    st.markdown("<h2>📝 შეკვეთის გაფორმება</h2>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    with st.form("create_order_form", clear_on_submit=True):
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        
-        sell_p = c1.number_input("ფასი რაც მომხმარებელმა გადაიხადა (₾)", min_value=0.0, step=5.0)
-        cost_p = c2.number_input("ფასი რაც პროდუქტი გვიჯდება (₾)", min_value=0.0, step=5.0)
-        
-        cust_name = c1.text_input("შემკვეთის სახელი (ინსტაგრამ იუზერი)")
-        cust_phone = c2.text_input("საკონტაქტო ნომერი")
-        cust_address = c1.text_input("მისამართი")
-        ship_fee = c2.number_input("ტრანსპორტირების თანხა (არ შედის ხარჯებში)", min_value=0.0, step=1.0)
-        
-        prod_info = st.text_area("რა შეიძინა (პროდუქციის დეტალები)")
-        prod_photo = st.file_uploader("პროდუქტის ფოტო (სურვილისამებრ)", type=['png', 'jpg', 'jpeg'])
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.form_submit_button("შეკვეთის გაფორმება"):
-            if sell_p > 0 and cust_name and cust_phone:
-                new_id = f"ORD-{len(st.session_state.orders) + 101}"
-                new_order = {
-                    "id": new_id,
-                    "sell_price": sell_p,
-                    "cost_price": cost_p,
-                    "customer_name": cust_name,
-                    "phone": cust_phone,
-                    "address": cust_address,
-                    "shipping_fee": ship_fee,
-                    "shipping_paid": False,
-                    "product_info": prod_info,
-                    "product_photo": prod_photo,
-                    "status": "გაფორმებული",
-                    "created_at": datetime.now().strftime("%Y-%m-%d")
-                }
-                st.session_state.orders.append(new_order)
-                st.session_state.notifications.append({"text": f"📦 ახალი შეკვეთა #{new_id} გაფორმდა ({cust_name})", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
-                st.success(f"✅ შეკვეთა #{new_id} წარმატებით გაფორმდა!")
-            else:
-                st.error("❌ გთხოვთ შეავსოთ აუცილებელი ველები (ფასი, სახელი, ნომერი)!")
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    
+    # 2 Columns for Form Fields
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        name = st.text_input("სახელი (ინსტაგრამ იუზერი / შემკვეთი)")
+        price = st.number_input("ფასი (რაც მომხმარებელმა გადაიხადა ₾)", min_value=0.0, step=5.0)
+        cost = st.number_input("ღირებულება (რაც პროდუქტი გვიჯდება ₾)", min_value=0.0, step=5.0)
+        address = st.text_input("მისამართი")
+
+    with col2:
+        phone = st.text_input("ნომერი")
+        shipping_fee = st.number_input("ტრანსპორტირების თანხა (₾)", min_value=0.0, step=1.0)
+        product_name = st.text_input("პროდუქტის დასახელება")
+        photo = st.file_uploader("ფოტო (სურვილისამებრ)", type=['png', 'jpg', 'jpeg'])
+
+    # REAL-TIME PROFIT CALCULATION DISPLAY
+    calculated_profit = price - cost
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card-glow" style="text-align: center;">
+        <h3 style="margin:0; color: #E9D5FF;">💡 მოსალოდნელი წმინდა მოგება რეალურ დროში:</h3>
+        <h1 style="margin:10px 0 0 0; color: {'#4ADE80' if calculated_profit >= 0 else '#F87171'}; font-size: 38px;">
+            {calculated_profit:,.2f} ₾
+        </h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("💾 შეკვეთის ჩანიშვნა და შენახვა", use_container_width=True):
+        if price > 0 and name and phone:
+            conn = get_db_connection()
+            c = conn.cursor()
+            order_id = f"ORD-{int(datetime.now().timestamp()) % 100000}"
+            created_at = datetime.now().strftime("%Y-%m-%d")
+            
+            c.execute('''
+                INSERT INTO orders (id, customer_name, price, cost, address, phone, shipping_fee, product_name, status, shipping_paid, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (order_id, name, price, cost, address, phone, shipping_fee, product_name, "გაფორმებული", 0, created_at))
+            
+            conn.commit()
+            conn.close()
+            
+            add_notification(f"📦 ახალი შეკვეთა #{order_id} გაფორმდა ({name})")
+            st.success(f"✅ შეკვეთა #{order_id} წარმატებით შენახულია ბაზაში სამუდამოდ!")
+        else:
+            st.error("❌ გთხოვთ შეავსოთ აუცილებელი ველები: სახელი, ფასი და ნომერი!")
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
-# 6. ORDERS MANAGEMENT PAGE (3 STAGES)
+# 7. ORDERS MANAGEMENT PAGE (3 STAGES + PERMANENT DELETE)
 # ---------------------------------------------------------
 def show_orders_page():
-    st.title("📦 შეკვეთების მართვა")
+    st.markdown("<h2>📦 შეკვეთების მართვა</h2>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Counter Summary
-    st_g = len([o for o in st.session_state.orders if o["status"] == "გაფორმებული"])
-    st_c = len([o for o in st.session_state.orders if o["status"] == "ჩამოსულია"])
-    st_f = len([o for o in st.session_state.orders if o["status"] == "ჩაბარებული"])
+    orders_df = load_orders()
+
+    st_g = len(orders_df[orders_df['status'] == 'გაფორმებული']) if not orders_df.empty else 0
+    st_c = len(orders_df[orders_df['status'] == 'ჩამოსულია']) if not orders_df.empty else 0
+    st_f = len(orders_df[orders_df['status'] == 'ჩაბარებული']) if not orders_df.empty else 0
 
     col_a, col_b, col_c = st.columns(3)
-    col_a.info(f"📥 გაფორმებული: **{st_g}** ამანათი")
-    col_b.warning(f"🛬 ჩამოსულია: **{st_c}** ამანათი")
-    col_c.success(f"✅ ჩაბარებული: **{st_f}** ამანათი")
+    col_a.info(f"📥 გაფორმებული: **{st_g}**")
+    col_b.warning(f"🛬 ჩამოსულია: **{st_c}**")
+    col_c.success(f"✅ ჩაბარებული: **{st_f}**")
 
     st.markdown("<br>", unsafe_allow_html=True)
     tabs = st.tabs(["📥 1. გაფორმებული", "🛬 2. ჩამოსულია", "✅ 3. ჩაბარებული"])
 
+    conn = get_db_connection()
+    c = conn.cursor()
+
     # Tab 1: გაფორმებული
     with tabs[0]:
-        orders_list = [o for o in st.session_state.orders if o["status"] == "გაფორმებული"]
-        if not orders_list:
+        g_orders = orders_df[orders_df['status'] == 'გაფორმებული'] if not orders_df.empty else pd.DataFrame()
+        if g_orders.empty:
             st.info("გაფორმებული შეკვეთები არ არის.")
-        for ord_item in orders_list:
-            st.markdown(f"""
-            <div class="glass-card">
-                <h4><b>#{ord_item['id']}</b> — {ord_item['customer_name']} ({ord_item['phone']})</h4>
-                <p><b>მისამართი:</b> {ord_item['address']} | <b>ნყიდი ფასი:</b> {ord_item['sell_price']} ₾ | <b>თვითღირებულება:</b> {ord_item['cost_price']} ₾</p>
-                <p><b>ტრანსპორტირება:</b> {ord_item['shipping_fee']} ₾ | <b>პროდუქტი:</b> {ord_item['product_info']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button(f"გადატანა 'ჩამოსულია'-ში ➡️", key=f"to_cam_{ord_item['id']}"):
-                ord_item["status"] = "ჩამოსულია"
-                st.session_state.notifications.append({"text": f"🛬 შეკვეთა #{ord_item['id']} გადავიდა სტატუსში: ჩამოსულია", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
-                st.rerun()
+        else:
+            for _, row in g_orders.iterrows():
+                st.markdown(f"""
+                <div class="glass-card">
+                    <h3><b>#{row['id']}</b> — {row['customer_name']} ({row['phone']})</h3>
+                    <p><b>მისამართი:</b> {row['address']} | <b>ფასი:</b> {row['price']} ₾ | <b>ღირებულება:</b> {row['cost']} ₾</p>
+                    <p><b>ტრანსპორტირება:</b> {row['shipping_fee']} ₾ | <b>პროდუქტი:</b> {row['product_name']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                b_col1, b_col2 = st.columns([3, 1])
+                if b_col1.button(f"გადატანა 'ჩამოსულია'-ში ➡️", key=f"to_c_{row['id']}"):
+                    c.execute("UPDATE orders SET status = 'ჩამოსულია' WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    add_notification(f"🛬 შეკვეთა #{row['id']} ჩამოვიდა")
+                    st.rerun()
+                if b_col2.button(f"🗑️ წაშლა", key=f"del_{row['id']}"):
+                    c.execute("DELETE FROM orders WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    st.rerun()
 
     # Tab 2: ჩამოსულია
     with tabs[1]:
-        orders_list = [o for o in st.session_state.orders if o["status"] == "ჩამოსულია"]
-        if not orders_list:
+        c_orders = orders_df[orders_df['status'] == 'ჩამოსულია'] if not orders_df.empty else pd.DataFrame()
+        if c_orders.empty:
             st.info("ჩამოსული შეკვეთები არ არის.")
-        for ord_item in orders_list:
-            st.markdown(f"""
-            <div class="glass-card">
-                <h4><b>#{ord_item['id']}</b> — {ord_item['customer_name']}</h4>
-                <p><b>გასახდელი ტრანსპორტირების თანხა:</b> <span style="color:#a855f7; font-weight:bold;">{ord_item['shipping_fee']} ₾</span></p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Checkbox for shipping payment restriction
-            is_paid = st.checkbox(f"მომხმარებელმა გადაიხადა ტრანსპორტირების თანხა ({ord_item['shipping_fee']} ₾)", value=ord_item["shipping_paid"], key=f"pay_{ord_item['id']}")
-            ord_item["shipping_paid"] = is_paid
+        else:
+            for _, row in c_orders.iterrows():
+                st.markdown(f"""
+                <div class="glass-card">
+                    <h3><b>#{row['id']}</b> — {row['customer_name']}</h3>
+                    <p><b>გასახდელი ტრანსპორტირების თანხა:</b> <span style="color:#A855F7; font-weight:bold; font-size:18px;">{row['shipping_fee']} ₾</span></p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                is_paid = st.checkbox(f"ტრანსპორტირების თანხა გადახდილია ({row['shipping_fee']} ₾)", value=bool(row['shipping_paid']), key=f"pay_{row['id']}")
+                if is_paid != bool(row['shipping_paid']):
+                    c.execute("UPDATE orders SET shipping_paid = ? WHERE id = ?", (1 if is_paid else 0, row['id']))
+                    conn.commit()
 
-            if st.button(f"გადატანა 'ჩაბარებული'-ში ➡️", key=f"to_done_{ord_item['id']}"):
-                if not ord_item["shipping_paid"]:
-                    st.error("❌ პროდუქტი ვერ გადავა ჩაბარებულ ველში ტრანსპორტირების თანხის გადახდის აღნიშვნის გარეშე!")
-                else:
-                    ord_item["status"] = "ჩაბარებული"
-                    st.session_state.notifications.append({"text": f"✅ შეკვეთა #{ord_item['id']} წარმატებით ჩაბარდა!", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
+                b_col1, b_col2 = st.columns([3, 1])
+                if b_col1.button(f"გადატანა 'ჩაბარებული'-ში ➡️", key=f"to_f_{row['id']}"):
+                    if not is_paid:
+                        st.error("❌ ვერ გადაიტანთ ჩაბარებულში, სანამ ტრანსპორტირების თანხა არ აღინიშნება გადახდილად!")
+                    else:
+                        c.execute("UPDATE orders SET status = 'ჩაბარებული' WHERE id = ?", (row['id'],))
+                        conn.commit()
+                        add_notification(f"✅ შეკვეთა #{row['id']} ჩაბარდა")
+                        st.rerun()
+                if b_col2.button(f"🗑️ წაშლა", key=f"del_c_{row['id']}"):
+                    c.execute("DELETE FROM orders WHERE id = ?", (row['id'],))
+                    conn.commit()
                     st.rerun()
 
     # Tab 3: ჩაბარებული
     with tabs[2]:
-        orders_list = [o for o in st.session_state.orders if o["status"] == "ჩაბარებული"]
-        if not orders_list:
+        f_orders = orders_df[orders_df['status'] == 'ჩაბარებული'] if not orders_df.empty else pd.DataFrame()
+        if f_orders.empty:
             st.info("ჩაბარებული შეკვეთები არ არის.")
-        for ord_item in orders_list:
-            st.markdown(f"""
-            <div class="glass-card-glow">
-                <h4><b>#{ord_item['id']}</b> — {ord_item['customer_name']} (დასრულებული)</h4>
-                <p><b>სრული შემოსავალი:</b> {ord_item['sell_price']} ₾ | <b>ტრანსპორტირება:</b> {ord_item['shipping_fee']} ₾ (გადახდილია ✅)</p>
-            </div>
-            """, unsafe_allow_html=True)
+        else:
+            for _, row in f_orders.iterrows():
+                st.markdown(f"""
+                <div class="glass-card-glow">
+                    <h3><b>#{row['id']}</b> — {row['customer_name']} (დასრულებული ✅)</h3>
+                    <p><b>სრული შემოსავალი:</b> {row['price']} ₾ | <b>მოგება:</b> {row['price'] - row['cost']} ₾</p>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"🗑️ შეკვეთის წაშლა ბაზიდან", key=f"del_f_{row['id']}"):
+                    c.execute("DELETE FROM orders WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    st.rerun()
+
+    conn.close()
 
 
 # ---------------------------------------------------------
-# 7. NOTIFICATIONS PAGE
+# 8. NOTIFICATIONS & PROFILE PAGES
 # ---------------------------------------------------------
 def show_notifications_page():
-    st.title("🔔 ნოტიფიკაციები და შეხსენებები")
+    st.markdown("<h2>🔔 ნოტიფიკაციები</h2>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
+    conn = get_db_connection()
+    notifs = pd.read_sql_query("SELECT * FROM notifications ORDER BY id DESC", conn)
+    conn.close()
+
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    for notif in reversed(st.session_state.notifications):
-        st.markdown(f"• **{notif['text']}** <br><small style='color:#94a3b8;'>{notif['date']}</small><hr style='border-color: rgba(255,255,255,0.05);'>", unsafe_allow_html=True)
+    if notifs.empty:
+        st.write("ნოტიფიკაციები არ არის.")
+    else:
+        for _, n in notifs.iterrows():
+            st.markdown(f"• **{n['text']}** <br><small style='color:#C084FC;'>{n['created_at']}</small><hr style='border-color: rgba(168,85,247,0.1);'>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------
-# 8. PROFILE SETTINGS PAGE
-# ---------------------------------------------------------
 def show_profile_page():
-    st.title("👤 პროფილის პარამეტრები")
+    st.markdown("<h2>👤 პროფილის პარამეტრები</h2>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
     reg = st.session_state.registered_user
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.subheader("მონაცემების განახლება")
-    
     new_b_name = st.text_input("ბიზნესის დასახელება", value=reg["business_name"])
     new_email = st.text_input("ელ-ფოსტა", value=reg["email"])
     new_phone = st.text_input("საკონტაქტო ნომერი", value=reg["phone"])
     
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
-    st.subheader("🔒 პაროლის შეცვლა")
+    st.markdown("<hr style='border-color: rgba(168,85,247,0.2);'>", unsafe_allow_html=True)
     curr_pass = st.text_input("მიმდინარე პაროლი", type="password")
     new_pass = st.text_input("ახალი პაროლი", type="password")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("ცვლილებების შენახვა"):
+    if st.button("💾 ცვლილებების შენახვა"):
         if curr_pass and curr_pass != reg["password"]:
             st.error("❌ მიმდინარე პაროლი არასწორია!")
         else:
-            # Warning modal/confirmation using session state
-            st.warning("⚠️ ყურადღება: მონაცემების შეცვლის შემდეგ ძველ მონაცემებს ვეღარ დააბრუნებთ! დარწმუნებული ხართ?")
-            if st.button("⚠️ დიახ, ვადასტურებ შეცვლას", key="confirm_change"):
-                reg["business_name"] = new_b_name
-                reg["email"] = new_email
-                reg["phone"] = new_phone
-                if new_pass:
-                    reg["password"] = new_pass
-                st.session_state.notifications.append({"text": "👤 პროფილის მონაცემები/პაროლი განახლდა", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
-                st.success("✅ მონაცემები წარმატებით განახლდა!")
+            reg["business_name"] = new_b_name
+            reg["email"] = new_email
+            reg["phone"] = new_phone
+            if new_pass:
+                reg["password"] = new_pass
+            add_notification("👤 პროფილის მონაცემები განახლდა")
+            st.success("✅ მონაცემები წარმატებით განახლდა!")
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -485,9 +511,9 @@ if not st.session_state.logged_in:
     show_auth_page()
 else:
     with st.sidebar:
-        st.markdown("<h2 style='color: #a855f7; font-weight: 800;'>🔮 Urbanwavve</h2>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:#94a3b8;'>{st.session_state.registered_user['business_name']}</p>", unsafe_allow_html=True)
-        st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #C084FC; font-weight: 800;'>🔮 Urbanwavve</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#E9D5FF;'>{st.session_state.registered_user['business_name']}</p>", unsafe_allow_html=True)
+        st.markdown("<hr style='border-color: rgba(168,85,247,0.2);'>", unsafe_allow_html=True)
         
         page = st.radio(
             "მენიუ",
@@ -498,7 +524,6 @@ else:
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("🚪 გასვლა", use_container_width=True):
             st.session_state.logged_in = False
-            st.session_state.remember_me = False
             st.rerun()
 
     if page == "📊 დეშბორდი":
