@@ -1,5 +1,4 @@
 import streamlit as st
-import plotly.graph_objects as go
 import pandas as pd
 
 # ---------------------------------------------------------
@@ -168,25 +167,12 @@ def show_dashboard():
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("📈 შეკვეთების გადანაწილება ეტაპების მიხედვით")
     
-    # Clean Transparent Plotly Chart
-    fig = go.Figure(data=[
-        go.Bar(
-            x=["მიღებული", "მუშავდება", "გაგზავნილი", "დასრულებული"],
-            y=[3, 5, 2, 8],
-            marker_color='#3b82f6',
-            marker_line_radius=8
-        )
-    ])
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="#e6e8eb", size=13),
-        xaxis=dict(showgrid=False, color="#a0aec0"),
-        yaxis=dict(showgrid=True, gridcolor="#1e2638", color="#a0aec0"),
-        margin=dict(l=20, r=20, t=20, b=20),
-        height=320
+    # Built-in Streamlit Chart (No Plotly needed)
+    chart_data = pd.DataFrame(
+        {"რაოდენობა": [3, 5, 2, 8]},
+        index=["მიღებული", "მუშავდება", "გაგზავნილი", "დასრულებული"]
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.bar_chart(chart_data, color="#3b82f6")
 
 
 # ---------------------------------------------------------
