@@ -22,7 +22,7 @@ def init_db():
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
     
-    # users ცხრილი
+    # users
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -32,7 +32,7 @@ def init_db():
         )
     ''')
     
-    # orders ცხრილი
+    # orders
     c.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +113,7 @@ if not st.session_state['logged_in']:
     st.title("🛍️ ბიზნესისა და შეკვეთების მართვა")
     st.write("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მარტივად.")
 
-    # Google OAuth ღილაკი
+    # Google OAuth
     st.markdown("### 🚀 სწრაფი შესვლა")
     if hasattr(st, "login"):
         if st.button("🌐 Google / Gmail-ით ავტორიზაცია"):
@@ -126,7 +126,7 @@ if not st.session_state['logged_in']:
 
     with tab1:
         st.subheader("სისტემაში შესვლა")
-        login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა", key="login_user")
+        login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა (Gmail)", key="login_user")
         login_pass = st.text_input("პაროლი", type='password', key="login_pass")
         remember_me = st.checkbox("მონაცემების დამახსოვრება", value=True)
 
@@ -143,7 +143,7 @@ if not st.session_state['logged_in']:
 
     with tab2:
         st.subheader("ახალი ბიზნეს ანგარიშის შექმნა")
-        new_business = st.text_input("🏢 მაღაზიის / ბიზნესის სახელწოდება", help="ეს სახელი გამოჩნდება თქვენს პორტფოლიოში")
+        new_business = st.text_input("🏢 მაღაზიის / ბიზნესის სახელწოდება", help="ეს სახელი გამოჩნდება თქვენს პროფილში")
         new_email = st.text_input("📧 ელ-ფოსტა (Gmail)")
         new_user = st.text_input("👤 მომხმარებლის სახელი")
         new_pass = st.text_input("🔒 პაროლი", type='password')
@@ -164,10 +164,22 @@ if not st.session_state['logged_in']:
 # 2. ავტორიზებული მომხმარებლის პანელი
 # ==========================================
 else:
+    # ზედა პანელი: პროფილის ინფო და გამოსვლის (Logout) ღილაკი
+    col_head1, col_head2 = st.columns([4, 1])
+    with col_head1:
+        st.caption(f"🏢 **{st.session_state['business_name']}** | 👤 მომხმარებელი: `{st.session_state['username']}`")
+    with col_head2:
+        if st.button("🚪 გამოსვლა", key="top_logout"):
+            st.session_state['logged_in'] = False
+            st.session_state['username'] = ""
+            st.session_state['business_name'] = ""
+            st.rerun()
+
+    st.markdown("---")
+
+    # მარცხენა მენიუ
     st.sidebar.markdown(f"## 🏢 {st.session_state['business_name']}")
-    st.sidebar.caption(f"მომხმარებელი: {st.session_state['username']}")
-    
-    if st.sidebar.button("🚪 გამოსვლა (Logout)"):
+    if st.sidebar.button("🚪 გამოსვლა (Logout)", key="sidebar_logout"):
         st.session_state['logged_in'] = False
         st.session_state['username'] = ""
         st.session_state['business_name'] = ""
