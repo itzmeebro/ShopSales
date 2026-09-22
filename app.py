@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIG & CUSTOM CSS (Active Tab Highlight & Animations)
+# 1. PAGE CONFIG & CUSTOM CSS (Active Glow + Form Fade-In Animation)
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="Urbanwavve Manager",
@@ -51,7 +51,7 @@ st.markdown("""
         font-size: 15px !important;
         border: none !important;
         padding: 12px 20px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 0px 4px 12px rgba(37, 99, 235, 0.25) !important;
     }
     .stButton>button:hover {
@@ -60,40 +60,54 @@ st.markdown("""
         box-shadow: 0px 6px 18px rgba(37, 99, 235, 0.4) !important;
     }
 
-    /* ACTIVE TAB TOGGLE STYLE (მუქი ლურჯი + მკვეთრი ქვედა ინდიკატორი) */
+    /* ACTIVE CLICKED TOGGLE BUTTON (მუქდება საგრძნობლად + ლამაზი განათება) */
     .active-toggle button {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        border-bottom: 3px solid #60a5fa !important;
-        box-shadow: 0px 6px 20px rgba(37, 99, 235, 0.5) !important;
-        transform: scale(1.03) !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%) !important;
+        color: #60a5fa !important;
+        font-weight: 800 !important;
+        border: 2px solid #2563eb !important;
+        box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.6), 0px 0px 16px rgba(37, 99, 235, 0.5) !important;
+        transform: scale(1.02) !important;
     }
 
-    /* INACTIVE TAB TOGGLE STYLE */
+    /* INACTIVE TOGGLE BUTTON */
     .inactive-toggle button {
         background: #121721 !important;
         color: #64748b !important;
         border: 1px solid #1e2638 !important;
         box-shadow: none !important;
         font-weight: 500 !important;
-        opacity: 0.7 !important;
+        opacity: 0.65 !important;
     }
     .inactive-toggle button:hover {
         background: #1a2233 !important;
         color: #cbd5e1 !important;
         border-color: #2a3447 !important;
         opacity: 1 !important;
-        transform: translateY(-1px) !important;
     }
 
-    /* Sidebar Styling */
+    /* FORM FADE & SLIDE-IN ANIMATION */
+    @keyframes fadeInSlide {
+        0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .animated-form {
+        animation: fadeInSlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Sidebar & Metrics */
     section[data-testid="stSidebar"] {
         background-color: #121721 !important;
         border-right: 1px solid #1e2638 !important;
     }
 
-    /* Metrics Cards */
     div[data-testid="stMetric"] {
         background-color: #121721 !important;
         border: 1px solid #2a3447 !important;
@@ -129,7 +143,7 @@ if 'orders' not in st.session_state:
 
 
 # ---------------------------------------------------------
-# 3. AUTHENTICATION PAGE
+# 3. AUTHENTICATION PAGE (Dynamic Animations)
 # ---------------------------------------------------------
 def show_auth_page():
     st.markdown("<br>", unsafe_allow_html=True)
@@ -139,13 +153,13 @@ def show_auth_page():
     col1, col2, col3 = st.columns([1, 1.2, 1])
     
     with col2:
-        # --- EVENLY BALANCED TOGGLE BUTTONS WITH ACTIVE HIGHLIGHT ---
+        # --- TOGGLE BUTTONS ---
         btn_col1, btn_col2 = st.columns(2, gap="small")
         
         with btn_col1:
             if st.session_state.auth_mode == 'login':
                 st.markdown('<div class="active-toggle">', unsafe_allow_html=True)
-                st.button("🔑 შესვლა", key="nav_login", use_container_width=True)
+                st.button("🔑 შესვლა", key="nav_login_act", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="inactive-toggle">', unsafe_allow_html=True)
@@ -157,7 +171,7 @@ def show_auth_page():
         with btn_col2:
             if st.session_state.auth_mode == 'register':
                 st.markdown('<div class="active-toggle">', unsafe_allow_html=True)
-                st.button("📝 რეგისტრაცია", key="nav_reg", use_container_width=True)
+                st.button("📝 რეგისტრაცია", key="nav_reg_act", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="inactive-toggle">', unsafe_allow_html=True)
@@ -168,7 +182,9 @@ def show_auth_page():
         
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- FORM CONTENT ---
+        # --- ANIMATED FORM CONTAINER ---
+        st.markdown('<div class="animated-form">', unsafe_allow_html=True)
+        
         if st.session_state.auth_mode == 'login':
             username = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა", key="login_user")
             password = st.text_input("პაროლი", type="password", key="login_pass")
@@ -198,6 +214,8 @@ def show_auth_page():
                     st.session_state.user_data["username"] = reg_user
                     st.session_state.user_data["phone"] = reg_phone
                     st.success("✅ რეგისტრაცია წარმატებით დასრულდა! გადადით შესვლის გვერდზე.")
+                    
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
