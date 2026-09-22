@@ -22,7 +22,6 @@ def init_db():
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
     
-    # users
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -32,7 +31,6 @@ def init_db():
         )
     ''')
     
-    # orders
     c.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +56,7 @@ def add_user(username, email, password, business_name):
     c = conn.cursor()
     try:
         c.execute('INSERT INTO users(username, email, password, business_name) VALUES (?,?,?,?)', 
-                  (username, email, make_hashes(password), business_name))
+                  (username.strip(), email.strip(), make_hashes(password), business_name.strip()))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -66,11 +64,12 @@ def add_user(username, email, password, business_name):
     finally:
         conn.close()
 
-def login_user(username, password):
+def login_user(username_or_email, password):
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
+    input_val = username_or_email.strip()
     c.execute('SELECT username, business_name FROM users WHERE (username = ? OR email = ?) AND password = ?', 
-              (username, username, make_hashes(password)))
+              (input_val, input_val, make_hashes(password)))
     data = c.fetchone()
     conn.close()
     return data
@@ -113,52 +112,50 @@ if not st.session_state['logged_in']:
     st.title("🛍️ ბიზნესისა და შეკვეთების მართვა")
     st.write("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მარტივად.")
 
-    # Google OAuth
-    st.markdown("### 🚀 სწრაფი შესვლა")
-    if hasattr(st, "login"):
-        if st.button("🌐 Google / Gmail-ით ავტორიზაცია"):
-            st.login("google")
-
-    st.markdown("---")
-    
-    # ავტორიზაცია & რეგისტრაცია ტაბებში
     tab1, tab2 = st.tabs(["🔑 ავტორიზაცია (შესვლა)", "📝 რეგისტრაცია"])
 
     with tab1:
         st.subheader("სისტემაში შესვლა")
-        login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა (Gmail)", key="login_user")
-        login_pass = st.text_input("პაროლი", type='password', key="login_pass")
-        remember_me = st.checkbox("მონაცემების დამახსოვრება", value=True)
+        with st.form("login_form"):
+            login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა (Gmail)")
+            login_pass = st.text_input("პაროლი", type='password')
+            login_submit = st.form_submit_button("შესვლა", type="primary")
 
-        if st.button("შესვლა", type="primary"):
-            user_data = login_user(login_input, login_pass)
-            if user_data:
-                st.session_state['logged_in'] = True
-                st.session_state['username'] = user_data[0]
-                st.session_state['business_name'] = user_data[1]
-                st.success(f"მოგესალმებით, {user_data[1]}!")
-                st.rerun()
-            else:
-                st.error("არასწორი მომხმარებლის სახელი/ელ-ფოსტა ან პაროლი.")
+            if login_submit:
+                if not login_input or not login_pass:
+                    st.warning("გთხოვთ შეავსოთ შესასვლელი ველები.")
+                else:
+                    user_data = login_user(login_input, login_pass)
+                    if user_data:
+                        st.session_state['logged_in'] = True
+                        st.session_state['username'] = user_data[0]
+                        st.session_state['business_name'] = user_data[1]
+                        st.success(f"მოგესალმებით, {user_data[1]}!")
+                        st.rerun()
+                    else:
+                        st.error("არასწორი მომხმარებლის სახელი/ელ-ფოსტა ან პაროლი.")
 
     with tab2:
         st.subheader("ახალი ბიზნეს ანგარიშის შექმნა")
-        new_business = st.text_input("🏢 მაღაზიის / ბიზნესის სახელწოდება", help="ეს სახელი გამოჩნდება თქვენს პროფილში")
-        new_email = st.text_input("📧 ელ-ფოსტა (Gmail)")
-        new_user = st.text_input("👤 მომხმარებლის სახელი")
-        new_pass = st.text_input("🔒 პაროლი", type='password')
-        confirm_pass = st.text_input("🔒 დაადასტურეთ პაროლი", type='password')
+        with st.form("register_form"):
+            new_business = st.text_input("🏢 მაღაზიის / ბიზნესის სახელწოდება")
+            new_email = st.text_input("📧 ელ-ფოსტა (Gmail)")
+            new_user = st.text_input("👤 მომხმარებლის სახელი")
+            new_pass = st.text_input("🔒 პაროლი", type='password')
+            confirm_pass = st.text_input("🔒 დაადასტურეთ პაროლი", type='password')
+            
+            reg_submit = st.form_submit_button("რეგისტრაცია", type="primary")
 
-        if st.button("რეგისტრაცია"):
-            if not new_business or not new_email or not new_user or not new_pass:
-                st.warning("გთხოვთ შეავსოთ ყველა ველი.")
-            elif new_pass != confirm_pass:
-                st.error("პაროლები არ ემთხვევა ერთმანეთს.")
-            else:
-                if add_user(new_user, new_email, new_pass, new_business):
-                    st.success("რეგისტრაცია წარმატებით დასრულდა! გადადით შესვლის ჩანართზე.")
+            if reg_submit:
+                if not new_business.strip() or not new_email.strip() or not new_user.strip() or not new_pass:
+                    st.warning("გთხოვთ შეავსოთ ყველა ველი.")
+                elif new_pass != confirm_pass:
+                    st.error("პაროლები არ ემთხვევა ერთმანეთს.")
                 else:
-                    st.error("ასეთი მომხმარებელი ან ელ-ფოსტა უკვე არსებობს.")
+                    if add_user(new_user, new_email, new_pass, new_business):
+                        st.success("🎉 რეგისტრაცია წარმატებით დასრულდა! გადადით შესვლის ჩანართზე.")
+                    else:
+                        st.error("ასეთი მომხმარებელი ან ელ-ფოსტა უკვე არსებობს.")
 
 # ==========================================
 # 2. ავტორიზებული მომხმარებლის პანელი
@@ -167,9 +164,10 @@ else:
     # ზედა პანელი: პროფილის ინფო და გამოსვლის (Logout) ღილაკი
     col_head1, col_head2 = st.columns([4, 1])
     with col_head1:
-        st.caption(f"🏢 **{st.session_state['business_name']}** | 👤 მომხმარებელი: `{st.session_state['username']}`")
+        st.subheader(f"🏢 {st.session_state['business_name']}")
+        st.caption(f"👤 ავტორიზებული მომხმარებელი: `{st.session_state['username']}`")
     with col_head2:
-        if st.button("🚪 გამოსვლა", key="top_logout"):
+        if st.button("🚪 გამოსვლა (Logout)", key="top_logout"):
             st.session_state['logged_in'] = False
             st.session_state['username'] = ""
             st.session_state['business_name'] = ""
@@ -177,15 +175,7 @@ else:
 
     st.markdown("---")
 
-    # მარცხენა მენიუ
-    st.sidebar.markdown(f"## 🏢 {st.session_state['business_name']}")
-    if st.sidebar.button("🚪 გამოსვლა (Logout)", key="sidebar_logout"):
-        st.session_state['logged_in'] = False
-        st.session_state['username'] = ""
-        st.session_state['business_name'] = ""
-        st.rerun()
-
-    # ნოტიფიკაციების შემოწმება (10+ დღის შეკვეთები)
+    # ნოტიფიკაციები (10+ დღის შეკვეთები)
     df_all = get_user_orders(st.session_state['username'])
     notifications = []
     
@@ -202,13 +192,13 @@ else:
                 if days_passed >= 10:
                     notifications.append(f"⚠️ **შეხსენება:** შეკვეთა #{row['id']} ({row['item_name']}) გაფორმდა {days_passed} დღის წინ. გადაამოწმეთ სტატუსი!")
 
-    # ნავიგაცია
+    # მენიუ მარცხნივ
     menu = ["📊 დეშბორდი & ფინანსები", "➕ ახალი შეკვეთა", "📦 შეკვეთების მართვა", f"🔔 ნოტიფიკაციები ({len(notifications)})"]
     choice = st.sidebar.radio("მენიუ", menu)
 
     # 📊 1. დეშბორდი & ფინანსები
     if choice == "📊 დეშბორდი & ფინანსები":
-        st.title(f"📊 {st.session_state['business_name']} - ფინანსური მიმოხილვა")
+        st.title(f"📊 ფინანსური მიმოხილვა")
         
         if not df_all.empty:
             c1, c2, c3, c4 = st.columns(4)
@@ -226,13 +216,12 @@ else:
     # ➕ 2. ახალი შეკვეთის დამატება
     elif choice == "➕ ახალი შეკვეთა":
         st.title("➕ ახალი შეკვეთის გაფორმება")
-        st.caption("შეკვეთას ავტომატურად მიენიჭება მიმდინარე თარიღი და დრო.")
 
         with st.form("new_order_form"):
             col1, col2 = st.columns(2)
             
             with col1:
-                item_name = st.text_input("📦 რა გაიყიდა? (პროდუქტის დასახელება)")
+                item_name = st.text_input("📦 პროდუქტის დასახელება")
                 customer_name = st.text_input("👤 მყიდველის სახელი და გვარი")
                 uploaded_file = st.file_uploader("🖼️ დაამატეთ პროდუქტის ფოტო", type=['png', 'jpg', 'jpeg'])
 
