@@ -13,6 +13,111 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- MODERN DARK THEME & ANIMATIONS (CSS) ---
+st.markdown("""
+    <style>
+    /* ძირითადი ფონი და ტექსტის ფერი */
+    .stApp {
+        background-color: #0d0f17;
+        color: #e2e8f0;
+    }
+    
+    /* გვერდითა მენიუ (Sidebar) */
+    [data-testid="stSidebar"] {
+        background-color: #121520 !important;
+        border-right: 1px solid #1e2436;
+    }
+    
+    /* Card / Container სტილი */
+    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"] {
+        background: #161b26;
+        border: 1px solid #232a3b;
+        border-radius: 16px;
+        padding: 18px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    
+    /* Hover ანიმაცია ბარათებზე */
+    [data-testid="stVerticalBlock"] > div > div[data-testid="stBlock"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.25);
+        border-color: #7c3aed;
+    }
+
+    /* ღილაკების სტილი და Click / Hover ანიმაცია */
+    .stButton > button {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.6rem 1.4rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.3px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
+    }
+    
+    .stButton > button:hover {
+        transform: scale(1.03) translateY(-1px) !important;
+        box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.55) !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    }
+    
+    .stButton > button:active {
+        transform: scale(0.97) !important;
+    }
+
+    /* Input ველების მოდერნიზაცია */
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+        background-color: #1a202c !important;
+        color: #f7fafc !important;
+        border-radius: 10px !important;
+        border: 1px solid #2d3748 !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .stTextInput input:focus, .stNumberInput input:focus {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+    }
+
+    /* Tabs სტილი */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
+        background-color: transparent;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 48px;
+        border-radius: 10px;
+        background-color: #161b26;
+        color: #a0aec0;
+        border: 1px solid #232a3b;
+        padding: 0 20px;
+        transition: all 0.2s ease;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+        color: #ffffff !important;
+        font-weight: bold;
+        border: none !important;
+    }
+
+    /* Metric ბარათების სტილი */
+    [data-testid="stMetricValue"] {
+        color: #a78bfa !important;
+        font-weight: 700;
+    }
+    
+    /* შეტყობინებების მორგება მუქ ფონზე */
+    .stAlert {
+        border-radius: 12px !important;
+        border: 1px solid #2d3748 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- პაროლის ჰეშირება ---
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
@@ -44,17 +149,23 @@ def init_db():
             status TEXT,
             image BLOB,
             shipping_cost REAL DEFAULT 0,
-            shipping_paid INTEGER DEFAULT 0
+            shipping_paid INTEGER DEFAULT 0,
+            address TEXT DEFAULT '',
+            phone TEXT DEFAULT ''
         )
     ''')
     
-    # სვეტების შემოწმება/დამატება ძველი ბაზისთვის
+    # სვეტების შემოწმება/დამატება არსებული ბაზისთვის
     c.execute("PRAGMA table_info(orders)")
     columns = [col[1] for col in c.fetchall()]
     if 'shipping_cost' not in columns:
         c.execute("ALTER TABLE orders ADD COLUMN shipping_cost REAL DEFAULT 0")
     if 'shipping_paid' not in columns:
         c.execute("ALTER TABLE orders ADD COLUMN shipping_paid INTEGER DEFAULT 0")
+    if 'address' not in columns:
+        c.execute("ALTER TABLE orders ADD COLUMN address TEXT DEFAULT ''")
+    if 'phone' not in columns:
+        c.execute("ALTER TABLE orders ADD COLUMN phone TEXT DEFAULT ''")
         
     conn.commit()
     conn.close()
@@ -85,13 +196,13 @@ def login_user(username_or_email, password):
     conn.close()
     return data
 
-def add_order(username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes, shipping_cost):
+def add_order(username, item_name, cost_price, sale_price, profit, customer_name, phone, address, order_date, image_bytes, shipping_cost):
     conn = sqlite3.connect('store_data.db', check_same_thread=False)
     c = conn.cursor()
     c.execute('''
-        INSERT INTO orders (username, item_name, cost_price, sale_price, profit, customer_name, order_date, status, image, shipping_cost, shipping_paid)
-        VALUES (?,?,?,?,?,?,?,'გაფორმებული',?,?, 0)
-    ''', (username, item_name, cost_price, sale_price, profit, customer_name, order_date, image_bytes, shipping_cost))
+        INSERT INTO orders (username, item_name, cost_price, sale_price, profit, customer_name, phone, address, order_date, status, image, shipping_cost, shipping_paid)
+        VALUES (?,?,?,?,?,?,?,?,?,'გაფორმებული',?,?, 0)
+    ''', (username, item_name, cost_price, sale_price, profit, customer_name, phone, address, order_date, image_bytes, shipping_cost))
     conn.commit()
     conn.close()
 
@@ -124,18 +235,18 @@ if 'business_name' not in st.session_state:
     st.session_state['business_name'] = ""
 
 # ==========================================
-# 1. პირველივე გვერდი: ავტორიზაცია / რეგისტრაცია
+# 1. ავტორიზაცია / რეგისტრაცია
 # ==========================================
 if not st.session_state['logged_in']:
-    st.title("🛍️ ბიზნესისა და შეკვეთების მართვა")
-    st.write("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მარტივად.")
+    st.title("✨ Business & Order Hub")
+    st.caption("მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები თანამედროვე პანელში.")
 
-    tab1, tab2 = st.tabs(["🔑 ავტორიზაცია (შესვლა)", "📝 რეგისტრაცია"])
+    tab1, tab2 = st.tabs(["🔑 შესვლა", "📝 რეგისტრაცია"])
 
     with tab1:
         st.subheader("სისტემაში შესვლა")
         with st.form("login_form"):
-            login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა (Gmail)")
+            login_input = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა")
             login_pass = st.text_input("პაროლი", type='password')
             login_submit = st.form_submit_button("შესვლა", type="primary")
 
@@ -157,7 +268,7 @@ if not st.session_state['logged_in']:
         st.subheader("ახალი ბიზნეს ანგარიშის შექმნა")
         with st.form("register_form"):
             new_business = st.text_input("🏢 მაღაზიის / ბიზნესის სახელწოდება")
-            new_email = st.text_input("📧 ელ-ფოსტა (Gmail)")
+            new_email = st.text_input("📧 ელ-ფოსტა")
             new_user = st.text_input("👤 მომხმარებლის სახელი")
             new_pass = st.text_input("🔒 პაროლი", type='password')
             confirm_pass = st.text_input("🔒 დაადასტურეთ პაროლი", type='password')
@@ -181,10 +292,11 @@ if not st.session_state['logged_in']:
 else:
     col_head1, col_head2 = st.columns([4, 1])
     with col_head1:
-        st.subheader(f"🏢 {st.session_state['business_name']}")
-        st.caption(f"👤 ავტორიზებული მომხმარებელი: `{st.session_state['username']}`")
+        st.title(f"🏢 {st.session_state['business_name']}")
+        st.caption(f"👤 მომხმარებელი: `{st.session_state['username']}`")
     with col_head2:
-        if st.button("🚪 გამოსვლა (Logout)", key="top_logout"):
+        st.write("")
+        if st.button("🚪 გამოსვლა", key="top_logout"):
             st.session_state['logged_in'] = False
             st.session_state['username'] = ""
             st.session_state['business_name'] = ""
@@ -206,23 +318,23 @@ else:
                 
                 days_passed = (today - order_dt).days
                 if days_passed >= 10:
-                    notifications.append(f"⚠️ **შეხსენება:** შეკვეთა #{row['id']} ({row['item_name']}) გაფორმდა {days_passed} დღის წინ. გადაამოწმეთ სტატუსი!")
+                    notifications.append(f"⚠️ **შეხსენება:** შეკვეთა #{row['id']} ({row['item_name']}) გაფორმდა {days_passed} დღის წინ.")
 
     menu = ["📊 დეშბორდი & ფინანსები", "➕ ახალი შეკვეთა", "📦 შეკვეთების მართვა", f"🔔 ნოტიფიკაციები ({len(notifications)})"]
     choice = st.sidebar.radio("მენიუ", menu)
 
     # 📊 1. დეშბორდი
     if choice == "📊 დეშბორდი & ფინანსები":
-        st.title("📊 ფინანსური მიმოხილვა")
+        st.subheader("📊 ფინანსური მიმოხილვა")
         
         if not df_all.empty:
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("სულ შეკვეთა", len(df_all))
-            c2.metric("💰 ჯამური შემოსავალი", f"{df_all['sale_price'].sum():.2f} ₾")
-            c3.metric("📉 ჯამური ხარჯი", f"{df_all['cost_price'].sum():.2f} ₾")
+            c2.metric("💰 შემოსავალი", f"{df_all['sale_price'].sum():.2f} ₾")
+            c3.metric("📉 ხარჯი", f"{df_all['cost_price'].sum():.2f} ₾")
             c4.metric("✨ წმინდა მოგება", f"{df_all['profit'].sum():.2f} ₾")
 
-            st.markdown("---")
+            st.markdown("<br>", unsafe_allow_html=True)
             st.subheader("📈 შეკვეთების გადანაწილება ეტაპების მიხედვით")
             st.bar_chart(df_all['status'].value_counts())
         else:
@@ -230,14 +342,16 @@ else:
 
     # ➕ 2. ახალი შეკვეთა
     elif choice == "➕ ახალი შეკვეთა":
-        st.title("➕ ახალი შეკვეთის გაფორმება")
+        st.subheader("➕ ახალი შეკვეთის გაფორმება")
 
         col1, col2 = st.columns(2)
         
         with col1:
             item_name = st.text_input("📦 პროდუქტის დასახელება")
             customer_name = st.text_input("👤 მყიდველის სახელი და გვარი")
-            uploaded_file = st.file_uploader("🖼️ დაამატეთ პროდუქტის ფოტო", type=['png', 'jpg', 'jpeg'])
+            customer_phone = st.text_input("📞 საკონტაქტო ნომერი")
+            customer_address = st.text_area("📍 ჩაბარების მისამართი", height=100)
+            uploaded_file = st.file_uploader("🖼️ პროდუქტის ფოტო", type=['png', 'jpg', 'jpeg'])
 
         with col2:
             sale_price = st.number_input("💰 გასაყიდი ფასი (₾)", min_value=0.0, step=1.0, value=0.0)
@@ -251,10 +365,10 @@ else:
             elif profit < 0:
                 st.error(f"⚠️ ყურადღება: ზარალი **{profit:.2f} ₾**")
             else:
-                st.info(f"💡 მოსალოდნელი მოგება: **0.00 ₾**")
+                st.info("💡 მოსალოდნელი მოგება: **0.00 ₾**")
 
         st.markdown("---")
-        submitted = st.button("შეკვეთის ჩანიშვნა", type="primary")
+        submitted = st.button("✨ შეკვეთის ჩანიშვნა", type="primary")
 
         if submitted:
             if not item_name.strip() or not customer_name.strip():
@@ -273,6 +387,8 @@ else:
                     sale_price,
                     profit,
                     customer_name,
+                    customer_phone,
+                    customer_address,
                     current_now,
                     image_bytes,
                     shipping_cost
@@ -281,8 +397,7 @@ else:
 
     # 📦 3. შეკვეთების მართვა
     elif choice == "📦 შეკვეთების მართვა":
-        st.title("📦 შეკვეთების მართვა & სტატუსები")
-        st.write("ადევნეთ თვალი შეკვეთებს ეტაპების მიხედვით.")
+        st.subheader("📦 შეკვეთების მართვა & სტატუსები")
 
         df_gaph = df_all[df_all['status'] == 'გაფორმებული']
         df_chamo = df_all[df_all['status'] == 'ჩამოსული']
@@ -294,28 +409,27 @@ else:
 
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.metric("📝 გაფორმებული", f"{count_gaph} შეკვეთა")
+            st.metric("📝 გაფორმებული", f"{count_gaph}")
         with m2:
-            st.metric("✈️ ჩამოსული", f"{count_chamo} შეკვეთა")
+            st.metric("✈️ ჩამოსული", f"{count_chamo}")
         with m3:
-            st.metric("✅ ჩაბარებული", f"{count_chab} შეკვეთა")
+            st.metric("✅ ჩაბარებული", f"{count_chab}")
 
-        st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
         tab1, tab2, tab3 = st.tabs([
-            f"📝 1. გაფორმებული ({count_gaph})", 
-            f"✈️ 2. ჩამოსული ({count_chamo})", 
-            f"✅ 3. ჩაბარებული ({count_chab})"
+            f"📝 გაფორმებული ({count_gaph})", 
+            f"✈️ ჩამოსული ({count_chamo})", 
+            f"✅ ჩაბარებული ({count_chab})"
         ])
 
         with tab1:
-            st.subheader("📝 გაფორმებული შეკვეთები")
             if df_gaph.empty:
                 st.info("💡 ამ სექციაში შეკვეთები არ არის.")
             else:
                 for _, row in df_gaph.iterrows():
                     with st.container():
-                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        st.markdown(f"### 📦 #{row['id']} - **{row['item_name']}**")
                         col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
 
                         with col_img:
@@ -327,8 +441,9 @@ else:
 
                         with col_info:
                             st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📞 **ტელეფონი:** `{row.get('phone', 'არ არის')}`")
+                            st.markdown(f"📍 **მისამართი:** `{row.get('address', 'არ არის')}`")
                             st.markdown(f"📅 **თარიღი:** {row['order_date']}")
-                            st.markdown(f"🏷️ **სტატუსი:** :orange[{row['status']}]")
                             st.markdown(f"✈️ **ტრანსპორტირება:** `{row.get('shipping_cost', 0):.2f} ₾`")
                             
                         with col_action:
@@ -346,16 +461,15 @@ else:
                                 update_order_status(row['id'], "ჩამოსული")
                                 st.rerun()
 
-                    st.markdown("---")
+                    st.markdown("<br>", unsafe_allow_html=True)
 
         with tab2:
-            st.subheader("✈️ ჩამოსული შეკვეთები")
             if df_chamo.empty:
                 st.info("💡 ამ სექციაში შეკვეთები არ არის.")
             else:
                 for _, row in df_chamo.iterrows():
                     with st.container():
-                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        st.markdown(f"### 📦 #{row['id']} - **{row['item_name']}**")
                         col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
 
                         with col_img:
@@ -367,8 +481,9 @@ else:
 
                         with col_info:
                             st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📞 **ტელეფონი:** `{row.get('phone', 'არ არის')}`")
+                            st.markdown(f"📍 **მისამართი:** `{row.get('address', 'არ არის')}`")
                             st.markdown(f"📅 **თარიღი:** {row['order_date']}")
-                            st.markdown(f"🏷️ **სტატუსი:** :blue[{row['status']}]")
                             
                             ship_cost = row.get('shipping_cost', 0)
                             is_paid = bool(row.get('shipping_paid', 0))
@@ -395,18 +510,17 @@ else:
                                     update_order_status(row['id'], "ჩაბარებული")
                                     st.rerun()
                             else:
-                                st.warning("🔒 გადასაყვანად ჯერ მონიშნეთ ტრანსპორტირების გადახდა")
+                                st.warning("🔒 ჯერ მონიშნეთ ტრანსპორტირების გადახდა")
 
-                    st.markdown("---")
+                    st.markdown("<br>", unsafe_allow_html=True)
 
         with tab3:
-            st.subheader("✅ ჩაბარებული შეკვეთები")
             if df_chab.empty:
                 st.info("💡 ამ სექციაში შეკვეთები არ არის.")
             else:
                 for _, row in df_chab.iterrows():
                     with st.container():
-                        st.markdown(f"#### 📦 #{row['id']} - **{row['item_name']}**")
+                        st.markdown(f"### 📦 #{row['id']} - **{row['item_name']}**")
                         col_img, col_info, col_action = st.columns([1.2, 2.5, 1.3])
 
                         with col_img:
@@ -418,8 +532,9 @@ else:
 
                         with col_info:
                             st.markdown(f"👤 **მყიდველი:** `{row['customer_name']}`")
+                            st.markdown(f"📞 **ტელეფონი:** `{row.get('phone', 'არ არის')}`")
+                            st.markdown(f"📍 **მისამართი:** `{row.get('address', 'არ არის')}`")
                             st.markdown(f"📅 **თარიღი:** {row['order_date']}")
-                            st.markdown(f"🏷️ **სტატუსი:** :green[{row['status']}]")
                             st.markdown(f"✈️ **ტრანსპორტირება:** `{row.get('shipping_cost', 0):.2f} ₾` (✅ გადახდილია)")
 
                         with col_action:
@@ -432,11 +547,11 @@ else:
                             else:
                                 st.markdown(f"⚠️ მოგება: :red[**{profit_val:.2f} ₾**]")
 
-                    st.markdown("---")
+                    st.markdown("<br>", unsafe_allow_html=True)
 
     # 🔔 4. ნოტიფიკაციები
     elif choice.startswith("🔔 ნოტიფიკაციები"):
-        st.title("🔔 შეხსენებები და შეტყობინებები")
+        st.subheader("🔔 შეხსენებები და შეტყობინებები")
         if notifications:
             for note in notifications:
                 st.warning(note)
