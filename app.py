@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIG & CUSTOM CSS (Modern UI Fixes)
+# 1. PAGE CONFIG & CUSTOM CSS (Modern UI)
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="Urbanwavve Manager",
@@ -20,7 +20,7 @@ st.markdown("""
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* Labels styling - Bright, Clear, Bold */
+    /* Input Field Labels - Bright & Bold */
     .stMarkdown label, label, div[data-testid="stWidgetLabel"] p {
         color: #f1f5f9 !important;
         font-size: 15px !important;
@@ -28,9 +28,9 @@ st.markdown("""
         margin-bottom: 6px !important;
     }
 
-    /* Input Fields Styling */
+    /* Modern Rounded Input Fields */
     .stTextInput>div>div>input {
-        border-radius: 12px !important;
+        border-radius: 14px !important;
         background-color: #121721 !important;
         color: #ffffff !important;
         border: 1px solid #2a3447 !important;
@@ -38,51 +38,38 @@ st.markdown("""
         font-size: 15px !important;
     }
     .stTextInput>div>div>input:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
     }
 
-    /* Tab Design Overhaul (Clean Pill Style) */
-    div[data-baseweb="tab-list"] {
-        gap: 8px !important;
-        background-color: #121721 !important;
-        padding: 6px !important;
-        border-radius: 16px !important;
-        border: 1px solid #2a3447 !important;
-    }
-    div[data-baseweb="tab"] {
-        height: 44px !important;
-        border-radius: 12px !important;
-        color: #94a3b8 !important;
-        font-weight: 600 !important;
-        padding: 0px 20px !important;
-        border: none !important;
-        background-color: transparent !important;
-    }
-    div[data-baseweb="tab"]:hover {
-        color: #ffffff !important;
-    }
-    div[aria-selected="true"] {
-        background: #2563eb !important;
-        color: #ffffff !important;
-        box-shadow: 0px 4px 12px rgba(37, 99, 235, 0.35) !important;
-    }
-
-    /* Primary Buttons Styling */
+    /* All Buttons Styling (Rounded & Blue Gradient) */
     .stButton>button {
-        border-radius: 12px !important;
+        border-radius: 14px !important;
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
         color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
         border: none !important;
-        padding: 12px 24px !important;
+        padding: 10px 20px !important;
         transition: all 0.2s ease !important;
+        box-shadow: 0px 4px 12px rgba(37, 99, 235, 0.25) !important;
     }
     .stButton>button:hover {
         opacity: 0.95 !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0px 4px 15px rgba(37, 99, 235, 0.4) !important;
+        box-shadow: 0px 6px 16px rgba(37, 99, 235, 0.4) !important;
+    }
+
+    /* Inactive Toggle Button Style */
+    .inactive-btn button {
+        background: #121721 !important;
+        color: #94a3b8 !important;
+        border: 1px solid #2a3447 !important;
+        box-shadow: none !important;
+    }
+    .inactive-btn button:hover {
+        background: #1a2233 !important;
+        color: #ffffff !important;
     }
 
     /* Sidebar Styling */
@@ -91,7 +78,7 @@ st.markdown("""
         border-right: 1px solid #1e2638 !important;
     }
 
-    /* Metrics */
+    /* Metrics Cards */
     div[data-testid="stMetric"] {
         background-color: #121721 !important;
         border: 1px solid #2a3447 !important;
@@ -107,6 +94,9 @@ st.markdown("""
 # ---------------------------------------------------------
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'auth_mode' not in st.session_state:
+    st.session_state.auth_mode = 'login'  # 'login' or 'register'
+
 if 'user_data' not in st.session_state:
     st.session_state.user_data = {
         "username": "ebro12",
@@ -114,6 +104,7 @@ if 'user_data' not in st.session_state:
         "phone": "+995 599 00 00 00",
         "profile_pic": None
     }
+
 if 'orders' not in st.session_state:
     st.session_state.orders = [
         {"id": "ORD-101", "customer": "გიორგი გ.", "amount": "120.00 ₾", "status": "აქტიური"},
@@ -123,42 +114,65 @@ if 'orders' not in st.session_state:
 
 
 # ---------------------------------------------------------
-# 3. AUTHENTICATION PAGE (Login / Register)
+# 3. AUTHENTICATION PAGE (Login / Register Custom Toggles)
 # ---------------------------------------------------------
 def show_auth_page():
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align: center; font-weight: 800; color: #ffffff;'>✨ Business & Order Manager</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 16px; margin-bottom: 30px;'>მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მარტივად</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 16px; margin-bottom: 25px;'>მართეთ თქვენი გაყიდვები, შეკვეთები და ფინანსები მარტივად</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.3, 1])
+    
     with col2:
-        auth_tab = st.tabs(["🔑 შესვლა", "📝 რეგისტრაცია"])
+        # --- TOP BUTTON TOGGLES ---
+        btn_col1, btn_col2 = st.columns(2)
         
-        # --- LOGIN TAB ---
-        with auth_tab[0]:
-            st.write(" ")
+        with btn_col1:
+            if st.session_state.auth_mode == 'login':
+                if st.button("🔑 შესვლა", key="nav_login", use_container_width=True):
+                    pass
+            else:
+                st.markdown('<div class="inactive-btn">', unsafe_allow_html=True)
+                if st.button("🔑 შესვლა", key="nav_login_inact", use_container_width=True):
+                    st.session_state.auth_mode = 'login'
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+        with btn_col2:
+            if st.session_state.auth_mode == 'register':
+                if st.button("📝 რეგისტრაცია", key="nav_reg", use_container_width=True):
+                    pass
+            else:
+                st.markdown('<div class="inactive-btn">', unsafe_allow_html=True)
+                if st.button("📝 რეგისტრაცია", key="nav_reg_inact", use_container_width=True):
+                    st.session_state.auth_mode = 'register'
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- FORM BODY ---
+        if st.session_state.auth_mode == 'login':
             username = st.text_input("მომხმარებლის სახელი ან ელ-ფოსტა", key="login_user")
             password = st.text_input("პაროლი", type="password", key="login_pass")
             
-            st.write(" ")
-            if st.button("სისტემაში შესვლა", use_container_width=True):
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("სისტემაში შესვლა", key="submit_login", use_container_width=True):
                 if username and password:
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("გთხოვთ შეავსოთ ყველა ველი!")
+                    st.error("❌ გთხოვთ შეავსოთ ყველა ველი!")
 
-        # --- REGISTER TAB ---
-        with auth_tab[1]:
-            st.write(" ")
+        else:
             reg_user = st.text_input("მომხმარებლის სახელი", key="reg_user")
             reg_email = st.text_input("ელ-ფოსტა", key="reg_email")
             reg_phone = st.text_input("ტელეფონის ნომერი", key="reg_phone", placeholder="+995 5XX XX XX XX")
             reg_pass = st.text_input("პაროლი", type="password", key="reg_pass")
             reg_confirm_pass = st.text_input("გაიმეორეთ პაროლი", type="password", key="reg_confirm_pass")
             
-            st.write(" ")
-            if st.button("ანგარიშის შექმნა", use_container_width=True):
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("ანგარიშის შექმნა", key="submit_reg", use_container_width=True):
                 if not (reg_user and reg_email and reg_phone and reg_pass and reg_confirm_pass):
                     st.error("❌ გთხოვთ შეავსოთ ყველა ველი!")
                 elif reg_pass != reg_confirm_pass:
@@ -166,7 +180,7 @@ def show_auth_page():
                 else:
                     st.session_state.user_data["username"] = reg_user
                     st.session_state.user_data["phone"] = reg_phone
-                    st.success("✅ რეგისტრაცია წარმატებით დასრულდა! ახლა შეგიძლიათ შეხვიდეთ სისტემაში.")
+                    st.success("✅ რეგისტრაცია წარმატებით დასრულდა! გადადით შესვლის გვერდზე.")
 
 
 # ---------------------------------------------------------
